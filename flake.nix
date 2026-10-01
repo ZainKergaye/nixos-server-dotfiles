@@ -39,7 +39,7 @@
       lib = nixpkgs.lib;
       userName = "server";
       mkHost =
-        hostName: extraModules:
+        hostName:
         lib.nixosSystem {
           inherit system;
           specialArgs = {
@@ -62,28 +62,27 @@
               home-manager.useUserPackages = true;
               home-manager.users.${userName} = import ./homemanager-modules;
             }
-          ]
-          ++ extraModules;
+          ];
         };
+      hostNames = [
+        "main"
+        "node1"
+        "node2"
+        "node3"
+        "node4"
+      ];
     in
     {
-      nixosConfigurations = {
-        main = mkHost "main" [ ];
-        node1 = mkHost "node1" [ ];
-        node2 = mkHost "node2" [ ];
-        node3 = mkHost "node3" [ ];
-        node4 = mkHost "node4" [ ];
-      };
+      nixosConfigurations = lib.genAttrs hostNames mkHost;
 
-      packages.${system} = {
-        main = self.nixosConfigurations.main.config.system.build.vm;
-      };
+      packages.${system} = lib.genAttrs hostNames (
+        hostName: self.nixosConfigurations.${hostName}.config.system.build.vm
+      );
 
-      apps.${system} = {
-        main = {
-          type = "app";
-          program = "${self.packages.${system}.main}/bin/run-main-vm";
-        };
-      };
+      apps.${system} = lib.genAttrs hostNames (hostName: {
+        meta.description = "Virtual machine for ${hostName}";
+        type = "app";
+        program = "${self.packages.${system}.${hostName}}/bin/run-${hostName}-vm";
+      });
     };
 }
