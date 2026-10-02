@@ -1,0 +1,3 @@
+{ ... }: {
+  # Reverse proxy config here
+}

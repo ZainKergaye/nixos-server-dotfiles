@@ -22,12 +22,6 @@
       description = "Local area network ip address";
       example = "10.10.10.1";
     };
-    LANipADDRbase = options.mkOption {
-      type = types.str;
-      default = "10.10.10.0";
-      description = "Local area network ip address base";
-      example = "10.10.10.0";
-    };
     LANipNetmask = options.mkOption {
       type = types.int;
       default = 24;
@@ -36,9 +30,9 @@
     };
     LANDHCPRange = options.mkOption {
       type = types.str;
-      default = "10.10.10.2,10.10.10.256";
+      default = "10.10.10.2,10.10.10.250";
       description = "Local area network DHCP range";
-      example = "10.10.10.2,10.10.10.256";
+      example = "10.10.10.2,10.10.10.250";
     };
   };
 
