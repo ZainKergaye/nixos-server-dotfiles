@@ -4,22 +4,28 @@
   ...
 }:
 {
+  imports = [
+    ./lists.nix
+    ./metrics.nix
+  ];
   options.adblock.enable = lib.options.mkEnableOption "Enable adblock stack";
 
-  config = {
+  config = lib.mkIf config.adblock.enable {
     networking.firewall = {
       allowedTCPPorts = [ 53 ];
       allowedUDPPorts = [ 53 ];
     };
-    services.blocky = lib.mkIf config.adblock.enable {
+    services.blocky = {
       enable = true;
       enableConfigCheck = true;
       settings = {
-        ports.dns = 53; # Port for incoming DNS Queries.
+        ports.dns = 53;
         upstreams.groups.default = [
-          "https://one.one.one.one/dns-query" # Using Cloudflare's DNS over HTTPS server for resolving queries.
+          "https://one.one.one.one/dns-query"
+          "1.1.1.1" # Cloudflare
+          "208.67.222.222" # OpenDNS
+          "9.9.9.9" # Quad9
         ];
-        # For initially solving DoH/DoT Requests when no system Resolver is available.
         bootstrapDns = {
           upstream = "https://one.one.one.one/dns-query";
           ips = [
@@ -27,17 +33,12 @@
             "1.0.0.1"
           ];
         };
-        #Enable Blocking of certain domains.
-        blocking = {
-          denylists = {
-            ads = [ "https://raw.githubusercontent.com/StevenBlack/hosts/master/hosts" ];
-            adult = [ "https://blocklistproject.github.io/Lists/porn.txt" ];
-          };
-          #Configure what block categories are used
-          clientGroupsBlock.default = [
-            "ads"
-            "adult"
-          ];
+
+        caching = {
+          minTime = "60s";
+          maxItemsCount = 10000;
+          prefetching = true;
+          prefetchMaxItemsCount = 2000;
         };
       };
     };

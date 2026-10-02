@@ -4,7 +4,7 @@
   ...
 }:
 {
-  config.services.blocky = lib.mkIf config.adblock.enable {
+  config.services.blocky.settings = lib.mkIf config.adblock.enable {
     ports.http = 4000;
   };
 }
