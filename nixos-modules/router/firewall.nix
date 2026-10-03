@@ -14,11 +14,14 @@
   };
 
   config = lib.mkIf config.router.enable {
-    firewall = {
+    networking.firewall = {
       enable = lib.mkDefault true;
+      # DHCP clients initially have no address, so they cannot be scoped by
+      # source address.  DNS is opened separately by the Blocky module.
+      allowedUDPPorts = [ 67 ];
       # Only allow ssh from LAN
       extraCommands = ''
-        iptables -A nixos-fw -p tcp --dport 22 -s ${config.router.LANipADDRbase}/${config.router.LANipNetmask} -j ACCEPT
+        iptables -A nixos-fw -p tcp --dport 22 -s ${config.router.LANipADDRbase}/${toString config.router.LANipNetmask} -j ACCEPT
       '';
     };
   };

@@ -21,6 +21,7 @@ The entrypoint is the flake. The flake pulls in the hostName at `hosts/xxx/confi
 - [ ] dns
 - [ ] dashboard hosting
 - [ ] metrics
+- [ ] ups
 
 ### node1
 
@@ -28,6 +29,8 @@ The entrypoint is the flake. The flake pulls in the hostName at `hosts/xxx/confi
 - [ ] jellyfin
 - [ ] homebridge
 - [ ] email server
+- [ ] security camera
+- [ ] ups
 
 ### node 2
 
@@ -36,9 +39,11 @@ nothing atm
 ### node 3
 
 - [ ] AI workflows
+- [ ] ups
 
 ### node 4
 
 - [ ] dev workflow
 - [ ] build server
 - [ ] nix store cache (other nodes and main read from)
+- [ ] ups
