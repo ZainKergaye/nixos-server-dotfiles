@@ -30,15 +30,15 @@
     enable = true;
   };
 
-  nixpkgs = {
-    # Configure your nixpkgs instance
-    config = {
-      # Disable if you don't want unfree packages
-      allowUnfree = true;
-    };
-  };
+  nixpkgs.config.allowUnfree = false;
 
   nix = {
+    optimise.automatic = true;
+    gc = {
+      automatic = true;
+      dates = "weekly";
+      options = "--delete-older-than 30d";
+    };
     settings = {
       experimental-features = [
         "nix-command"

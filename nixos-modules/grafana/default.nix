@@ -8,7 +8,7 @@
     enable = options.mkEnableOption "Enable grafana dashboard";
   };
 
-  config.services = lib.mkIf config.prometheus.enable {
+  config.services = lib.mkIf config.grafana.enable {
     grafana = {
       enable = true;
       settings = {

@@ -5,6 +5,7 @@
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
     nixos-hardware.url = "github:NixOS/nixos-hardware/master";
     nixvim-custom.url = "github:ZainKergaye/nixvim_dotfiles";
+    disko.url = "github:nix-community/disko/latest";
     home-manager = {
       url = "github:nix-community/home-manager";
       inputs.nixpkgs.follows = "nixpkgs";
@@ -76,7 +77,7 @@
       nixosConfigurations = lib.genAttrs hostNames mkHost;
 
       packages.${system} = lib.genAttrs hostNames (
-        hostName: self.nixosConfigurations.${hostName}.config.system.build.vm
+        hostName: self.nixosConfigurations.${hostName}.config.virtualisation.vmVariant.system.build.vm
       );
 
       apps.${system} = lib.genAttrs hostNames (hostName: {

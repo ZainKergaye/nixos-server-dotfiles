@@ -6,7 +6,10 @@
   ...
 }:
 {
-  imports = [ ./programs.nix ];
+  imports = [
+    ./programs.nix
+    ./shell.nix
+  ];
   home.homeDirectory = "/home/${userName}";
   home.username = userName;
 
