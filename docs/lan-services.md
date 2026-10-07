@@ -32,3 +32,17 @@ Caddy listens only on `10.10.10.1`, and the firewall permits port 80 only from
 `10.10.10.0/24`; these routes are therefore unavailable from the WAN.  This
 template is HTTP-only by design.  Add internal TLS later only after deciding
 how clients will trust Caddy's local CA.
+
+## Monitoring
+
+Every host runs the Prometheus node exporter on port `9100`.  Its firewall rule
+only permits the collector on `main` (`10.10.10.1`).  `main` runs the single
+Prometheus server and Grafana; Grafana uses the local Prometheus datasource, so
+all hosts are available from one dashboard.  Grafana listens on port `3000`.
+Use `http://grafana.home` from the LAN; Caddy exposes it through the existing
+LAN-only reverse proxy rule.
+
+To add a metrics-capable service, expose its Prometheus endpoint, append a
+scrape job in `nixos-modules/prometheus/default.nix`, and contribute its JSON
+dashboard through `grafana.dashboards`.  The dashboard is then provisioned
+automatically on `main`.

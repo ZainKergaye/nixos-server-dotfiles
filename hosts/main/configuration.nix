@@ -13,6 +13,11 @@
   };
   networking.nameservers = [ "localhost" ];
   adblock.enable = true;
+  prometheus = {
+    enable = true;
+    server.enable = true;
+  };
+  grafana.enable = true;
   reverse_proxy = {
     enable = true;
     routes = {
@@ -21,6 +26,7 @@
       # "immich.home" = "10.10.10.11:2283";
       # "jellyfin.home" = "10.10.10.11:8096";
       "apple.home" = "${config.router.lanHosts."node1.home"}:3232";
+      "grafana.home" = "127.0.0.1:3000";
     };
   };
   router = {
