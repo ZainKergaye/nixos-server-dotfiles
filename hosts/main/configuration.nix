@@ -13,16 +13,10 @@
   };
   networking.nameservers = [ "localhost" ];
   adblock.enable = true;
-  prometheus = {
-    enable = true;
-    server.enable = true;
-  };
+  prometheus.server.enable = true;
   grafana.enable = true;
   wireguardGateway.enable = true;
-  ups = {
-    enable = true;
-    server.enable = true;
-  };
+  ups.server.enable = true;
   reverse_proxy = {
     enable = true;
     routes = {
