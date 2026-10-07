@@ -1,6 +1,7 @@
 { ... }: {
   imports = [
     ./blocky
+    ./comin
     ./grafana
     ./lan-node
     ./prometheus

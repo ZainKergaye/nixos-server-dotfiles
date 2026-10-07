@@ -6,6 +6,10 @@
     nixos-hardware.url = "github:NixOS/nixos-hardware/master";
     nixvim-custom.url = "github:ZainKergaye/nixvim_dotfiles";
     disko.url = "github:nix-community/disko/latest";
+    comin = {
+      url = "github:nlewo/comin";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
     home-manager = {
       url = "github:nix-community/home-manager";
       inputs.nixpkgs.follows = "nixpkgs";
@@ -32,6 +36,7 @@
       self,
       nixpkgs,
       home-manager,
+      comin,
       ...
     }@inputs:
     let
@@ -55,6 +60,7 @@
             ./hosts/${hostName}/configuration.nix
             ./hosts/common
             ./nixos-modules
+            comin.nixosModules.comin
             home-manager.nixosModules.home-manager
             {
               home-manager.extraSpecialArgs = { inherit inputs hostName userName; };

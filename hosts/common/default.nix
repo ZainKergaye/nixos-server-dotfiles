@@ -12,6 +12,8 @@
     (modulesPath + "/installer/scan/not-detected.nix")
   ];
 
+  cominDeployment.enable = true;
+
   virtualisation.graphics = false;
 
   networking.firewall = {

@@ -123,3 +123,17 @@ WireGuard peer metrics are collected locally by Prometheus and shown in the
 **WireGuard Overview** Grafana dashboard: configured-peer count, time since
 each peer's latest handshake, and per-peer upload/download rates. The exporter
 only listens on `127.0.0.1:9586`.
+
+## Continuous deployment with Comin
+
+Every host runs Comin in pull mode. It polls the repository's `main` branch
+every 60 seconds and deploys the matching `nixosConfigurations.<hostname>`
+output. Comin retains recent successful and bootable deployments, so a failed
+commit does not replace the current system. Its Prometheus exporter is exposed
+only to the central collector on port `4243`; Grafana provisions a **Comin
+Deployments** dashboard for exporter health.
+
+The configured repository URL is the public HTTPS GitHub URL. If this
+repository is private, override `cominDeployment.repository` with an
+authenticated transport and provision its credentials on every host before
+enabling Comin.
