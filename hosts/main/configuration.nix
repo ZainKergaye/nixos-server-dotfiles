@@ -18,6 +18,10 @@
     server.enable = true;
   };
   grafana.enable = true;
+  ups = {
+    enable = true;
+    server.enable = true;
+  };
   reverse_proxy = {
     enable = true;
     routes = {

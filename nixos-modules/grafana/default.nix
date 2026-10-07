@@ -54,7 +54,7 @@ in
         server = {
           http_addr = "0.0.0.0";
           http_port = 3000;
-          domain = "192.168.1.1";
+          domain = "192.168.1.1"; # WARN: Is this right?
         };
 
         analytics.reporting_enabled = false;

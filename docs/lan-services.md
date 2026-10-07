@@ -46,3 +46,23 @@ To add a metrics-capable service, expose its Prometheus endpoint, append a
 scrape job in `nixos-modules/prometheus/default.nix`, and contribute its JSON
 dashboard through `grafana.dashboards`.  The dashboard is then provisioned
 automatically on `main`.
+
+## UPS shutdown coordination
+
+The USB-connected CyberPower CP1500C is served by NUT on `main`. Every node
+runs a NUT secondary monitor, so a low-battery or forced-shutdown event causes
+each protected host to shut down cleanly. NUT port `3493` is LAN-only; its
+Prometheus exporter is local to `main`.
+
+Before deploying, create one strong shared password on `main`:
+
+```sh
+sudo install -d -m 0700 /etc/nut
+openssl rand -base64 32 | sudo tee /etc/nut/ups-monitor-password >/dev/null
+sudo chmod 0600 /etc/nut/ups-monitor-password
+```
+
+Copy that exact file to `node1` through `node4` using your normal secure admin
+path; it is deliberately not stored in this repository. Deploy `main` first,
+then the clients. On `main`, run `upsc UPS-1@localhost`; it should report
+`ups.status: OL` while utility power is present.

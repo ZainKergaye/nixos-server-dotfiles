@@ -1,0 +1,15 @@
+{
+  "uid": "ups-overview",
+  "title": "UPS Overview",
+  "tags": ["ups", "nut", "prometheus"],
+  "timezone": "browser",
+  "schemaVersion": 39,
+  "version": 1,
+  "refresh": "30s",
+  "panels": [
+    { "id": 1, "title": "Battery charge", "type": "gauge", "targets": [{ "expr": "network_ups_tools_battery_charge", "refId": "A" }], "fieldConfig": { "defaults": { "unit": "percent", "min": 0, "max": 100 }, "overrides": [] }, "gridPos": { "h": 8, "w": 6, "x": 0, "y": 0 } },
+    { "id": 2, "title": "UPS load", "type": "gauge", "targets": [{ "expr": "network_ups_tools_ups_load", "refId": "A" }], "fieldConfig": { "defaults": { "unit": "percent", "min": 0, "max": 100 }, "overrides": [] }, "gridPos": { "h": 8, "w": 6, "x": 6, "y": 0 } },
+    { "id": 3, "title": "Battery runtime", "type": "stat", "targets": [{ "expr": "network_ups_tools_battery_runtime", "refId": "A" }], "fieldConfig": { "defaults": { "unit": "s", "decimals": 0 }, "overrides": [] }, "gridPos": { "h": 8, "w": 6, "x": 12, "y": 0 } },
+    { "id": 4, "title": "On battery", "type": "stat", "targets": [{ "expr": "network_ups_tools_ups_status{flag=\"OB\"}", "refId": "A" }], "fieldConfig": { "defaults": { "mappings": [{ "options": { "0": { "text": "Mains power", "color": "green" }, "1": { "text": "On battery", "color": "red" } }, "type": "value" }] }, "overrides": [] }, "gridPos": { "h": 8, "w": 6, "x": 18, "y": 0 } }
+  ]
+}

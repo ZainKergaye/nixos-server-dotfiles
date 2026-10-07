@@ -4,4 +4,5 @@
     address = "10.10.10.13";
   };
   prometheus.enable = true;
+  ups.enable = true;
 }

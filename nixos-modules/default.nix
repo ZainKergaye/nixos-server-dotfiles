@@ -6,5 +6,6 @@
     ./prometheus
     ./reverse_proxy
     ./router
+    ./ups
   ];
 }
