@@ -1,0 +1,43 @@
+{
+  "uid": "wireguard-overview",
+  "title": "WireGuard Overview",
+  "tags": ["wireguard", "vpn", "prometheus"],
+  "timezone": "browser",
+  "schemaVersion": 39,
+  "version": 1,
+  "refresh": "30s",
+  "panels": [
+    {
+      "id": 1,
+      "title": "Configured peers",
+      "type": "stat",
+      "targets": [{ "expr": "count(wireguard_latest_handshake_seconds{interface=\"wg0\"})", "refId": "A" }],
+      "fieldConfig": { "defaults": { "decimals": 0 }, "overrides": [] },
+      "gridPos": { "h": 8, "w": 6, "x": 0, "y": 0 }
+    },
+    {
+      "id": 2,
+      "title": "Seconds since last handshake",
+      "type": "timeseries",
+      "targets": [{ "expr": "wireguard_latest_handshake_delay_seconds{interface=\"wg0\"}", "legendFormat": "{{allowed_ips}}", "refId": "A" }],
+      "fieldConfig": { "defaults": { "unit": "s" }, "overrides": [] },
+      "gridPos": { "h": 8, "w": 18, "x": 6, "y": 0 }
+    },
+    {
+      "id": 3,
+      "title": "Peer download from gateway",
+      "type": "timeseries",
+      "targets": [{ "expr": "rate(wireguard_sent_bytes_total{interface=\"wg0\"}[5m])", "legendFormat": "{{allowed_ips}}", "refId": "A" }],
+      "fieldConfig": { "defaults": { "unit": "Bps" }, "overrides": [] },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 8 }
+    },
+    {
+      "id": 4,
+      "title": "Peer upload to gateway",
+      "type": "timeseries",
+      "targets": [{ "expr": "rate(wireguard_received_bytes_total{interface=\"wg0\"}[5m])", "legendFormat": "{{allowed_ips}}", "refId": "A" }],
+      "fieldConfig": { "defaults": { "unit": "Bps" }, "overrides": [] },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 8 }
+    }
+  ]
+}

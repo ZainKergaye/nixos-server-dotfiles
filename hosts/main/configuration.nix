@@ -18,6 +18,7 @@
     server.enable = true;
   };
   grafana.enable = true;
+  wireguardGateway.enable = true;
   ups = {
     enable = true;
     server.enable = true;
@@ -43,6 +44,7 @@
   # variant affects only the test VM; the real machine continues to use the
   # interface names above.
   virtualisation.vmVariant = {
+    ups.enable = lib.mkForce false;
     disko.devices.disk.main.device = lib.mkForce "/dev/vda";
     router.WANif = lib.mkForce "wan0";
     router.LANif = lib.mkForce "lan0";

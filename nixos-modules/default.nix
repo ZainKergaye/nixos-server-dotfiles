@@ -7,5 +7,6 @@
     ./reverse_proxy
     ./router
     ./ups
+    ./wireguard
   ];
 }

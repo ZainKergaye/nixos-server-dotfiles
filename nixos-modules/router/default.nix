@@ -47,13 +47,29 @@
       };
       description = "Static LAN hostname-to-address mappings served by Blocky";
     };
+    ids.enable = mkOption {
+      type = types.bool;
+      default = true;
+      description = "Enable Suricata IDS inspection of Internet-facing router traffic";
+    };
   };
 
   config = lib.mkIf config.router.enable {
+    # Keep router, DHCP, DNS, and firewall events across reboots.  A finite
+    # retention limit prevents a noisy WAN scan from consuming the disk.
+    services.journald.settings.Journal = {
+      Storage = "persistent";
+      SystemMaxUse = "1G";
+      MaxRetentionSec = "30day";
+    };
+
     boot.kernel.sysctl = {
       # IP forwarding
       "net.ipv4.ip_forward" = 1;
       "net.ipv6.conf.all.forwarding" = 1;
+      # Don’t accept ICMP redirects from an untrusted WAN.
+      "net.ipv4.conf.all.accept_redirects" = 0;
+      "net.ipv4.conf.default.accept_redirects" = 0;
     };
     networking = {
       networkmanager.enable = false;
@@ -100,9 +116,56 @@
       };
     };
 
+    services.suricata = lib.mkIf config.router.ids.enable {
+      enable = true;
+      # Rule updates run daily and are loaded without waiting for a reboot.
+      reloadOnRulesetUpdate = true;
+      settings = {
+        vars.address-groups.HOME_NET = "${config.router.LANipADDRbase}/${toString config.router.LANipNetmask}";
+        af-packet = [
+          {
+            # Capturing only WAN sees both ingress and egress Internet flows;
+            # also capturing LAN would duplicate each forwarded flow.
+            interface = config.router.WANif;
+            cluster-id = "99";
+            cluster-type = "cluster_flow";
+            defrag = "yes";
+          }
+        ];
+        stats = {
+          enable = true;
+          interval = "60";
+        };
+        outputs = [
+          {
+            eve-log = {
+              enabled = true;
+              filetype = "regular";
+              filename = "eve.json";
+              community-id = true;
+              types = [
+                { alert = { }; }
+                { flow = { }; }
+                { stats = { }; }
+              ];
+            };
+          }
+          {
+            fast = {
+              enabled = true;
+              filename = "fast.log";
+              append = "yes";
+            };
+          }
+        ];
+      };
+    };
+
     services.blocky.settings.customDNS = lib.mkIf config.adblock.enable {
       customTTL = "1h";
       mapping = config.router.lanHosts;
     };
+
+    grafana.dashboards."router.json" = ./dashboard.json;
   };
 }

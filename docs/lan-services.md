@@ -66,3 +66,60 @@ Copy that exact file to `node1` through `node4` using your normal secure admin
 path; it is deliberately not stored in this repository. Deploy `main` first,
 then the clients. On `main`, run `upsc UPS-1@localhost`; it should report
 `ups.status: OL` while utility power is present.
+
+## Router monitoring and logs
+
+The router's node exporter feeds the **Router Overview** Grafana dashboard with
+LAN/WAN traffic, interface errors and drops, conntrack use, uptime, and the
+state of DNS/DHCP/proxy services. The router also retains its journal for up to
+30 days (or 1 GiB). Refused inbound TCP connection attempts are recorded in
+the kernel journal without enabling noisy per-packet logging:
+
+```sh
+sudo journalctl -k -g 'refused connection' --since today
+sudo journalctl -u dnsmasq -u blocky --since today
+```
+
+## Intrusion detection
+
+Suricata runs in IDS mode on the router WAN interface. It inspects inbound and
+outbound Internet traffic with the maintained Suricata rule sources, including
+known command-and-control and malware indicators. It does **not** drop traffic
+inline; detection is safer for the current router because a false positive
+cannot break a client connection. Rules update daily and Suricata reloads them
+automatically.
+
+Inspect concise alerts and structured events on `main` with:
+
+```sh
+sudo tail -F /var/log/suricata/fast.log
+sudo journalctl -u suricata -u suricata-update --since today
+```
+
+The Router Overview dashboard includes Suricata's service health. Add inline
+IPS blocking only after reviewing alerts and selecting a conservative allow/
+drop policy for this network.
+
+## Remote access with WireGuard
+
+`main` provides a full-tunnel WireGuard gateway on UDP port `51820`. VPN
+clients receive an address in `10.100.0.0/24`, can reach `main` and every
+`10.10.10.0/24` LAN node, and send Internet traffic through the router's WAN
+NAT. The server key is generated at `/var/lib/wireguard/server.key`; it is not
+stored in Git.
+
+Add each outside device to `wireguardGateway.peers` in
+`hosts/main/configuration.nix`, with its generated public key and a unique
+address such as `10.100.0.2/32`. After deploying `main`, obtain the server
+public key with `sudo wg show wg0 public-key`. A full-tunnel client profile
+uses `AllowedIPs = 0.0.0.0/0`, `DNS = 10.10.10.1`, and endpoint
+`<your-public-DNS-or-IP>:51820`.
+
+If the WAN is behind another ISP router, forward UDP port `51820` to `main`.
+Check a connected client with `sudo wg show` on `main`; it should show a recent
+handshake and transfer counters.
+
+WireGuard peer metrics are collected locally by Prometheus and shown in the
+**WireGuard Overview** Grafana dashboard: configured-peer count, time since
+each peer's latest handshake, and per-peer upload/download rates. The exporter
+only listens on `127.0.0.1:9586`.
