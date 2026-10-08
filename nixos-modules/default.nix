@@ -7,6 +7,7 @@
     ./prometheus
     ./reverse_proxy
     ./router
+    ./scrypted
     ./ups
     ./wireguard
   ];

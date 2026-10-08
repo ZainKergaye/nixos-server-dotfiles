@@ -47,6 +47,34 @@ scrape job in `nixos-modules/prometheus/default.nix`, and contribute its JSON
 dashboard through `grafana.dashboards`.  The dashboard is then provisioned
 automatically on `main`.
 
+## Scrypted and HomeKit Secure Video
+
+`node1` runs Scrypted at `https://10.10.10.11:10443`. Its self-signed
+certificate is expected; use the direct IP rather than the reverse proxy.
+Scrypted is intentionally reachable without its own login, but the Node 1
+firewall accepts it (including HomeKit's mDNS and dynamic accessory ports) only
+from `10.10.10.0/24` and connected WireGuard clients (`10.100.0.0/24`). It is
+not available from the WAN.
+
+The Scrypted container retains only its configuration, plugins, and HomeKit
+pairings in `/var/lib/scrypted`. It has no `/nvr` mount and no NVR recording
+storage configured, so it does not retain camera footage. Do not install or
+enable the Scrypted NVR plugin. With a HomePod or Apple TV hub, HomeKit Secure
+Video uploads the recordings to Apple instead.
+
+After deploying Node 1, add the camera in the Scrypted management console:
+
+1. Install the `RTSP` plugin (or the Amcrest plugin if the specific Lorex model
+   is supported), then add the Lorex camera using its `rtsp://...` URL.
+2. Assign both the main stream and substream when the camera offers them; use
+   the lower-resolution substream for motion analysis.
+3. Install and enable the `HomeKit` plugin for the camera, scan that camera's
+   pairing QR code in Apple Home, then select **Stream & Allow Recording**.
+
+The Lorex RTSP IP/URL is deliberately not committed here: it is camera-specific
+and commonly embeds credentials. Keep it in Scrypted's local configuration
+rather than Git.
+
 ## UPS shutdown coordination
 
 The USB-connected CyberPower CP1500C is served by NUT on `main`. Every node
