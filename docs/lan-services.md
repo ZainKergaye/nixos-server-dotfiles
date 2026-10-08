@@ -83,6 +83,14 @@ service is not exposed on the WAN. Register the first account through the
 **Getting Started** page; that account becomes the administrator. Do not
 disable Immich authentication.
 
+Immich exports API and microservice Prometheus metrics on ports `8081` and
+`8082`. These endpoints are enabled but their firewall rules accept requests
+only from the Prometheus server on `main`; they are not reachable by LAN or
+WireGuard clients. The two jobs appear as `immich-api` and
+`immich-microservices` in Prometheus, and the Immich module provisions an
+**Immich Overview** Grafana dashboard when Grafana is enabled on the central
+collector.
+
 Immich stores originals, generated thumbnails/transcodes, and its automatic
 database dumps below `/var/lib/immich`. Node 1 mounts the NFSv4 export
 `10.10.10.12:/srv/backups/immich` on demand and runs Borg daily at 03:30,

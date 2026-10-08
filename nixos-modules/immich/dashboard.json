@@ -1,0 +1,43 @@
+{
+  "uid": "immich-overview",
+  "title": "Immich Overview",
+  "tags": ["immich", "photos", "prometheus"],
+  "timezone": "browser",
+  "schemaVersion": 39,
+  "version": 1,
+  "refresh": "30s",
+  "panels": [
+    {
+      "id": 1,
+      "title": "Metrics endpoints",
+      "type": "stat",
+      "targets": [{ "expr": "up{job=~\"immich-(api|microservices)\"}", "legendFormat": "{{job}}", "refId": "A" }],
+      "fieldConfig": { "defaults": { "decimals": 0, "mappings": [{ "options": { "0": { "text": "Down", "color": "red" }, "1": { "text": "Up", "color": "green" } }, "type": "value" }] }, "overrides": [] },
+      "gridPos": { "h": 8, "w": 8, "x": 0, "y": 0 }
+    },
+    {
+      "id": 2,
+      "title": "Process memory",
+      "type": "timeseries",
+      "targets": [{ "expr": "process_resident_memory_bytes{job=~\"immich-(api|microservices)\"}", "legendFormat": "{{job}}", "refId": "A" }],
+      "fieldConfig": { "defaults": { "unit": "bytes" }, "overrides": [] },
+      "gridPos": { "h": 8, "w": 16, "x": 8, "y": 0 }
+    },
+    {
+      "id": 3,
+      "title": "Process CPU usage",
+      "type": "timeseries",
+      "targets": [{ "expr": "rate(process_cpu_seconds_total{job=~\"immich-(api|microservices)\"}[5m])", "legendFormat": "{{job}}", "refId": "A" }],
+      "fieldConfig": { "defaults": { "unit": "cores" }, "overrides": [] },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 8 }
+    },
+    {
+      "id": 4,
+      "title": "Node.js heap used",
+      "type": "timeseries",
+      "targets": [{ "expr": "nodejs_heap_size_used_bytes{job=~\"immich-(api|microservices)\"}", "legendFormat": "{{job}}", "refId": "A" }],
+      "fieldConfig": { "defaults": { "unit": "bytes" }, "overrides": [] },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 8 }
+    }
+  ]
+}
