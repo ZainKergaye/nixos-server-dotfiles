@@ -49,8 +49,8 @@ automatically on `main`.
 
 ## Scrypted and HomeKit Secure Video
 
-`node1` runs Scrypted at `https://10.10.10.11:10443`. Its self-signed
-certificate is expected; use the direct IP rather than the reverse proxy.
+`node1` runs Scrypted at `http://scrypted.home`; its direct HTTPS endpoint is
+also available at `https://10.10.10.11:10443` with a self-signed certificate.
 Scrypted is intentionally reachable without its own login, but the Node 1
 firewall accepts it (including HomeKit's mDNS and dynamic accessory ports) only
 from `10.10.10.0/24` and connected WireGuard clients (`10.100.0.0/24`). It is
@@ -74,6 +74,44 @@ After deploying Node 1, add the camera in the Scrypted management console:
 The Lorex RTSP IP/URL is deliberately not committed here: it is camera-specific
 and commonly embeds credentials. Keep it in Scrypted's local configuration
 rather than Git.
+
+## Immich
+
+`node1` runs authenticated Immich at `http://immich.home` on the LAN and
+directly at `http://10.10.10.11:2283` from connected WireGuard clients. The
+service is not exposed on the WAN. Register the first account through the
+**Getting Started** page; that account becomes the administrator. Do not
+disable Immich authentication.
+
+Immich stores originals, generated thumbnails/transcodes, and its automatic
+database dumps below `/var/lib/immich`. Node 1 mounts the NFSv4 export
+`10.10.10.12:/srv/backups/immich` on demand and runs Borg daily at 03:30,
+retaining 7 daily, 4 weekly, and 12 monthly archives. The repository is
+initialized automatically at `/mnt/immich-backup/borg`; Node 2 permits NFSv4
+only from Node 1. Both the NFS server and export path are configurable through
+`immich.backup.nfsServer` and `immich.backup.nfsExport`.
+
+The default Borg mode is unencrypted because the dedicated NFS server is on the
+trusted LAN. To encrypt archives, set `immich.backup.borgEncryptionMode` and
+provide `immich.backup.borgPassCommand` pointing to a separately provisioned
+secret file; never place the passphrase in Git.
+
+### Initial 30 GB import
+
+Upload from the computer that currently holds the library rather than copying
+files into `/var/lib/immich`. After creating an API key in **Account Settings →
+API Keys**, run the current Immich CLI on that computer:
+
+```sh
+npm install -g @immich/cli
+immich login http://10.10.10.11:2283/api YOUR_API_KEY
+immich upload --dry-run --recursive /path/to/photo-library
+immich upload --recursive /path/to/photo-library
+```
+
+Use the Node 1 address over WireGuard when importing remotely. The CLI hashes
+files and Immich deduplicates them, so retries are safe; keep the source copy
+until the import and off-node backup have both been verified.
 
 ## UPS shutdown coordination
 

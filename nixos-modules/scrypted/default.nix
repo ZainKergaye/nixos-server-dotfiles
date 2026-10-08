@@ -40,6 +40,9 @@ in
         environment = {
           SCRYPTED_DISABLE_AUTHENTICATION = "true";
           SCRYPTED_DOCKER_AVAHI = "true";
+          # Keep the HTTPS listener for direct access, and expose this HTTP
+          # listener only to the LAN through Caddy at scrypted.home.
+          SCRYPTED_INSECURE_PORT = "11080";
           TZ = config.time.timeZone;
         };
         # This volume contains Scrypted's configuration, HomeKit pairings, and

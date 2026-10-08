@@ -3,6 +3,7 @@
     ./blocky
     ./comin
     ./grafana
+    ./immich
     ./lan-node
     ./prometheus
     ./reverse_proxy

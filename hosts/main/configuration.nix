@@ -22,7 +22,8 @@
     routes = {
       # Add one entry per HTTP service.  The hostname resolves to main, then
       # Caddy proxies it to the node and port shown here.
-      # "immich.home" = "10.10.10.11:2283";
+      "immich.home" = "10.10.10.11:2283";
+      "scrypted.home" = "10.10.10.11:11080";
       # "jellyfin.home" = "10.10.10.11:8096";
       "apple.home" = "${config.router.lanHosts."node1.home"}:3232";
       "grafana.home" = "127.0.0.1:3000";

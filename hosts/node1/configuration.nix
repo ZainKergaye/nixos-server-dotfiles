@@ -5,4 +5,5 @@
   };
 
   scrypted.enable = true;
+  immich.enable = true;
 }
