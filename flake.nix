@@ -78,13 +78,28 @@
         "node3"
         "node4"
       ];
+      mainConfiguration = mkHost "main";
+      mainInstaller = lib.nixosSystem {
+        inherit system;
+        specialArgs = {
+          mainDiskoScript = mainConfiguration.config.system.build.diskoScript;
+          mainSystem = mainConfiguration.config.system.build.toplevel;
+        };
+        modules = [ ./hosts/main/installer.nix ];
+      };
     in
     {
-      nixosConfigurations = lib.genAttrs hostNames mkHost;
+      nixosConfigurations = lib.genAttrs hostNames mkHost // {
+        main-installer = mainInstaller;
+      };
 
-      packages.${system} = lib.genAttrs hostNames (
-        hostName: self.nixosConfigurations.${hostName}.config.virtualisation.vmVariant.system.build.vm
-      );
+      packages.${system} =
+        lib.genAttrs hostNames (
+          hostName: self.nixosConfigurations.${hostName}.config.virtualisation.vmVariant.system.build.vm
+        )
+        // {
+          main-installer = mainInstaller.config.system.build.isoImage;
+        };
 
       apps.${system} = lib.genAttrs hostNames (hostName: {
         meta.description = "Virtual machine for ${hostName}";

@@ -14,6 +14,20 @@ The entrypoint is the flake. The flake pulls in the hostName at `hosts/xxx/confi
 
 ### main
 
+#### Unattended installer USB
+
+Build the self-installing ISO with:
+
+```sh
+nix build --impure path:.#main-installer --out-link main-installer.iso
+```
+
+Write `main-installer.iso` to a USB drive, boot it on `main`, and remove the
+USB when it asks. The ISO automatically erases **only** `/dev/nvme0n1`, applies
+the Disko layout, installs the prebuilt `main` system without requiring network
+access, and reboots. Confirm the USB is booted on the intended machine before
+using it: there is no interactive confirmation.
+
 - [ ] openpfsense
 - [x] vpn
 - [x] reverse proxy
