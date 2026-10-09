@@ -31,8 +31,8 @@
   };
   router = {
     enable = true;
-    WANif = "enp1s0";
-    LANif = "enp2s0";
+    WANif = "enp2s0";
+    LANif = "eno1";
   };
 
   # `nix run .#main` gets a NAT-backed WAN and a socket-backed LAN.  This
@@ -57,4 +57,11 @@
     '';
   };
   hardware.cpu.intel.updateMicrocode = true;
+  boot.loader = {
+    timeout = 4;
+    efi.canTouchEfiVariables = true;
+    systemd-boot = {
+      enable = true;
+    };
+  };
 }

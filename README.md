@@ -15,22 +15,22 @@ The entrypoint is the flake. The flake pulls in the hostName at `hosts/xxx/confi
 ### main
 
 - [ ] openpfsense
-- [ ] vpn
-- [ ] reverse proxy
-- [ ] adblock
-- [ ] dns
+- [x] vpn
+- [x] reverse proxy
+- [x] adblock
+- [x] dns
 - [ ] dashboard hosting
-- [ ] metrics
-- [ ] ups
+- [x] metrics
+- [x] ups
 
 ### node1
 
-- [ ] immich
+- [x] immich
 - [ ] jellyfin
 - [ ] homebridge
 - [ ] email server
-- [ ] security camera
-- [ ] ups
+- [x] security camera
+- [x] ups
 
 ### node 2
 
