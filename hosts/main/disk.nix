@@ -27,6 +27,10 @@
             content = {
               type = "filesystem";
               format = "ext4";
+              extraArgs = [
+                "-L"
+                "nixos"
+              ];
               mountpoint = "/";
             };
           };
