@@ -43,7 +43,7 @@
         "main.home" = "10.10.10.1";
         "node1.home" = "10.10.10.11";
         "node2.home" = "10.10.10.12";
-        "node3.home" = "10.10.10.13";
+        "node3.home" = "10.10.10.15";
         "node4.home" = "10.10.10.14";
       };
       description = "Static LAN hostname-to-address mappings served by Blocky";
@@ -192,7 +192,10 @@
       description = "Publish Suricata EVE statistics for Prometheus";
       after = [ "suricata.service" ];
       serviceConfig.Type = "oneshot";
-      path = [ pkgs.coreutils pkgs.jq ];
+      path = [
+        pkgs.coreutils
+        pkgs.jq
+      ];
       script = ''
         set -euo pipefail
 
@@ -223,6 +226,10 @@
             ]
             | .[] | select(.[1] != null) | "\(.[0]) \(.[1])"'
         } > "$tmp"
+        # node_exporter runs as the unprivileged node-exporter user.  mktemp
+        # creates the file with mode 0600, and mv preserves that mode, so make
+        # the finished textfile readable before atomically publishing it.
+        chmod 0644 "$tmp"
         mv "$tmp" "$output"
       '';
     };

@@ -1,6 +1,6 @@
 { ... }: {
   lanNode = {
     enable = true;
-    address = "10.10.10.13";
+    address = "10.10.10.15";
   };
 }
