@@ -20,7 +20,7 @@
     peers = [
       {
         name = "thinkpad";
-        publicKey = "6EST+2tQDNaSYbSMT+FhcU1b8WjudqkRhghko7adckU=";
+        publicKey = "xEEAGu1rKyrrT8S72v8pqUB2XrDkhoHJnwjcU6Ys2jQ=";
         allowedIP = "10.100.0.2/32";
       }
     ];
