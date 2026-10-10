@@ -12,9 +12,12 @@
     enable = true;
   };
   networking.nameservers = [ "localhost" ];
-  # The existing host key is the age identity used to decrypt SOPS-managed
-  # system secrets during activation.
-  sops.age.sshKeyPaths = [ "/etc/ssh/ssh_host_ed25519_key" ];
+  # Keep SOPS' age identity separate from the SSH host key.  This key is
+  # created on the first deployment and remains local to main.
+  sops.age = {
+    keyFile = "/var/lib/sops-nix/key.txt";
+    generateKey = true;
+  };
   adblock.enable = true;
   prometheus.server.enable = true;
   grafana.enable = true;
