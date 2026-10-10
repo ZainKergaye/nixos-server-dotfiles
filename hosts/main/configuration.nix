@@ -15,7 +15,16 @@
   adblock.enable = true;
   prometheus.server.enable = true;
   grafana.enable = true;
-  wireguardGateway.enable = true;
+  wireguardGateway = {
+    enable = true;
+    peers = [
+      {
+        name = "thinkpad";
+        publicKey = "6EST+2tQDNaSYbSMT+FhcU1b8WjudqkRhghko7adckU=";
+        allowedIP = "10.100.0.2/32";
+      }
+    ];
+  };
   ups.server.enable = true;
   reverse_proxy = {
     enable = true;
