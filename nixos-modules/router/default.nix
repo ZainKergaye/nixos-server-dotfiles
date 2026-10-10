@@ -229,11 +229,20 @@
           type = "file";
           include = [ "/var/log/suricata/eve.json" ];
           read_from = "end";
-          decoding.codec = "json";
+        };
+        transforms.parse_suricata_eve = {
+          type = "remap";
+          inputs = [ "suricata_eve" ];
+          # Vector 0.58's file source emits raw lines.  Parse each EVE record
+          # here so its event_type can safely be used as a low-cardinality
+          # Loki label while the complete JSON remains the log body.
+          source = ''
+            . = parse_json!(.message)
+          '';
         };
         sinks.loki = {
           type = "loki";
-          inputs = [ "suricata_eve" ];
+          inputs = [ "parse_suricata_eve" ];
           endpoint = "http://127.0.0.1:3100";
           encoding.codec = "json";
           labels = {
