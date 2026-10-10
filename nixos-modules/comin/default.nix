@@ -16,7 +16,7 @@ in
     };
     branch = mkOption {
       type = types.str;
-      default = "main";
+      default = "master";
       description = "Git branch Comin deploys";
     };
     pollInterval = mkOption {
