@@ -1,6 +1,7 @@
 {
   config,
   lib,
+  pkgs,
   ...
 }:
 {
@@ -136,6 +137,14 @@
           enable = true;
           interval = "60";
         };
+        app-layer.protocols.modbus = {
+          # The maintained rule set contains Modbus signatures.  Suricata
+          # disables this lightweight parser by default, which makes its rule
+          # validation fail before the IDS can start.
+          enabled = "yes";
+          detection-ports.dp = 502;
+          stream-depth = 0;
+        };
         outputs = [
           {
             eve-log = {
@@ -146,8 +155,17 @@
               types = [
                 { alert = { }; }
                 { flow = { }; }
-                { stats = { }; }
               ];
+            };
+          }
+          {
+            # Keep periodic engine counters separate so the textfile collector
+            # can read one small record instead of scanning the event log.
+            eve-log = {
+              enabled = true;
+              filetype = "regular";
+              filename = "stats.json";
+              types = [ { stats = { }; } ];
             };
           }
           {
@@ -158,6 +176,63 @@
             };
           }
         ];
+      };
+    };
+
+    services.prometheus.exporters.node = lib.mkIf config.router.ids.enable {
+      enabledCollectors = [ "textfile" ];
+      extraFlags = [ "--collector.textfile.directory=/var/lib/node_exporter/textfile" ];
+    };
+
+    systemd.tmpfiles.rules = lib.mkIf config.router.ids.enable [
+      "d /var/lib/node_exporter/textfile 0755 root root -"
+    ];
+
+    systemd.services.suricata-eve-metrics = lib.mkIf config.router.ids.enable {
+      description = "Publish Suricata EVE statistics for Prometheus";
+      after = [ "suricata.service" ];
+      serviceConfig.Type = "oneshot";
+      path = [ pkgs.coreutils pkgs.jq ];
+      script = ''
+        set -euo pipefail
+
+        stats_file=/var/log/suricata/stats.json
+        output=/var/lib/node_exporter/textfile/suricata.prom
+        test -s "$stats_file"
+
+        tmp=$(mktemp "''${output}.XXXXXX")
+        trap 'rm -f "$tmp"' EXIT
+
+        {
+          echo '# HELP suricata_eve_stats_up Whether a valid Suricata EVE stats record was read.'
+          echo '# TYPE suricata_eve_stats_up gauge'
+          echo 'suricata_eve_stats_up 1'
+          echo '# HELP suricata_eve_stats_last_update_seconds Unix time of the latest EVE stats record.'
+          echo '# TYPE suricata_eve_stats_last_update_seconds gauge'
+          printf 'suricata_eve_stats_last_update_seconds %s\n' "$(stat -c %Y "$stats_file")"
+          tail -n 1 "$stats_file" | jq -r '
+            [
+              ["suricata_eve_uptime_seconds", .stats.uptime],
+              ["suricata_eve_alerts_total", .stats.detect.alert],
+              ["suricata_eve_alert_queue_overflow_total", .stats.detect.alert_queue_overflow],
+              ["suricata_eve_alerts_suppressed_total", .stats.detect.alerts_suppressed],
+              ["suricata_eve_capture_packets_total", (.stats.capture.kernel_packets_total // .stats.capture.kernel_packets)],
+              ["suricata_eve_capture_drops_total", (.stats.capture.kernel_drops_total // .stats.capture.kernel_drops)],
+              ["suricata_eve_tcp_reassembly_gaps_total", .stats.tcp.reassembly_gap],
+              ["suricata_eve_flow_memuse_bytes", .stats.flow.memuse]
+            ]
+            | .[] | select(.[1] != null) | "\(.[0]) \(.[1])"'
+        } > "$tmp"
+        mv "$tmp" "$output"
+      '';
+    };
+
+    systemd.timers.suricata-eve-metrics = lib.mkIf config.router.ids.enable {
+      wantedBy = [ "timers.target" ];
+      timerConfig = {
+        OnBootSec = "2min";
+        OnUnitActiveSec = "1min";
+        Unit = "suricata-eve-metrics.service";
       };
     };
 
