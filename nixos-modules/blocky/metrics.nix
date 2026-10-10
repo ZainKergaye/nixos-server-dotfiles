@@ -6,6 +6,7 @@
 {
   config = lib.mkIf config.adblock.enable {
     services.blocky.settings.ports.http = 4000;
+    services.blocky.settings.prometheus.enable = true;
     grafana.dashboards."blocky.json" = ./dashboard.json;
     services.prometheus.scrapeConfigs = [
       {
