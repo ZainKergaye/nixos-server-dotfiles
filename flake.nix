@@ -14,6 +14,10 @@
       url = "github:nix-community/home-manager";
       inputs.nixpkgs.follows = "nixpkgs";
     };
+    sops-nix = {
+      url = "github:Mic92/sops-nix";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
   };
 
   nixConfig = {
@@ -37,6 +41,7 @@
       nixpkgs,
       home-manager,
       comin,
+      sops-nix,
       ...
     }@inputs:
     let
@@ -62,6 +67,7 @@
             ./nixos-modules
             comin.nixosModules.comin
             home-manager.nixosModules.home-manager
+            sops-nix.nixosModules.sops
             {
               home-manager.extraSpecialArgs = { inherit inputs hostName userName; };
               networking.hostName = hostName;
