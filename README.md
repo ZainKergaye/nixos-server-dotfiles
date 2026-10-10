@@ -39,6 +39,20 @@ using it: there is no interactive confirmation.
 
 ### node1
 
+#### Unattended installer USB
+
+Build the self-installing ISO with:
+
+```sh
+nix build --impure path:.#node1-installer --out-link node1-installer.iso
+```
+
+Write `node1-installer.iso` to a USB drive, boot it on `node1`, and remove the
+USB when it asks. The ISO automatically erases **only** `/dev/nvme0n1`, applies
+the Disko layout, installs the prebuilt `node1` system without requiring network
+access, and reboots. Confirm the USB is booted on the intended machine before
+using it: there is no interactive confirmation.
+
 - [x] immich
 - [ ] jellyfin
 - [ ] homebridge

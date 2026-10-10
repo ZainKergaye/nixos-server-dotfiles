@@ -85,6 +85,7 @@
         "node4"
       ];
       mainConfiguration = mkHost "main";
+      node1Configuration = mkHost "node1";
       mainInstaller = lib.nixosSystem {
         inherit system;
         specialArgs = {
@@ -93,10 +94,19 @@
         };
         modules = [ ./hosts/main/installer.nix ];
       };
+      node1Installer = lib.nixosSystem {
+        inherit system;
+        specialArgs = {
+          node1DiskoScript = node1Configuration.config.system.build.diskoScript;
+          node1System = node1Configuration.config.system.build.toplevel;
+        };
+        modules = [ ./hosts/node1/installer.nix ];
+      };
     in
     {
       nixosConfigurations = lib.genAttrs hostNames mkHost // {
         main-installer = mainInstaller;
+        node1-installer = node1Installer;
       };
 
       packages.${system} =
@@ -105,6 +115,7 @@
         )
         // {
           main-installer = mainInstaller.config.system.build.isoImage;
+          node1-installer = node1Installer.config.system.build.isoImage;
         };
 
       apps.${system} = lib.genAttrs hostNames (hostName: {
