@@ -8,7 +8,7 @@
 {
   imports = [
     ./user.nix
-    (modulesPath + "/virtualisation/qemu-vm.nix")
+    #(modulesPath + "/virtualisation/qemu-vm.nix")
     (modulesPath + "/installer/scan/not-detected.nix")
   ];
 
@@ -17,7 +17,7 @@
   prometheus.enable = true;
   ups.enable = true;
 
-  virtualisation.graphics = false;
+  # virtualisation.graphics = false;
 
   networking.firewall = {
     enable = true;

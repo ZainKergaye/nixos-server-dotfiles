@@ -31,8 +31,8 @@
   };
   router = {
     enable = true;
-    WANif = "enp2s0";
-    LANif = "eno1";
+    WANif = "eno1";
+    LANif = "enp2s0";
   };
 
   # `nix run .#main` gets a NAT-backed WAN and a socket-backed LAN.  This
