@@ -25,7 +25,7 @@
       }
     ];
   };
-  ups.server.enable = true;
+  #ups.server.enable = true;
   reverse_proxy = {
     enable = true;
     routes = {
