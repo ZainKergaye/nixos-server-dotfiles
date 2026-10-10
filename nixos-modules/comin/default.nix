@@ -39,7 +39,7 @@ in
         {
           name = "origin";
           url = cfg.repository;
-          branches.${cfg.branch}.name = cfg.branch;
+          branches.main.name = cfg.branch;
           poller.period = cfg.pollInterval;
         }
       ];
