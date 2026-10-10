@@ -23,6 +23,11 @@
         publicKey = "xEEAGu1rKyrrT8S72v8pqUB2XrDkhoHJnwjcU6Ys2jQ=";
         allowedIP = "10.100.0.2/32";
       }
+      {
+        name = "iPhone";
+        publicKey = "Lox4BpBF+zFFnibZJEB2vFgqlASwV6wP1uMa6mVngSE=";
+        allowedIP = "10.100.0.3/32";
+      }
     ];
   };
   #ups.server.enable = true;
@@ -31,11 +36,11 @@
     routes = {
       # Add one entry per HTTP service.  The hostname resolves to main, then
       # Caddy proxies it to the node and port shown here.
-      "immich.home" = "10.10.10.11:2283";
-      "scrypted.home" = "10.10.10.11:11080";
-      # "jellyfin.home" = "10.10.10.11:8096";
-      "apple.home" = "${config.router.lanHosts."node1.home"}:3232";
-      "grafana.home" = "127.0.0.1:3000";
+      "immich.s" = "10.10.10.11:2283";
+      "scrypted.s" = "10.10.10.11:11080";
+      "apple.s" = "${config.router.lanHosts."node1.home"}:3232";
+      "grafana.s" = "127.0.0.1:3000";
+      "nas.s" = "10.10.10.39";
     };
   };
   router = {

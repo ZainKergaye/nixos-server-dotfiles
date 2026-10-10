@@ -11,6 +11,7 @@
     ./shell.nix
     ./tmux.nix
   ];
+  tmux-conf.enable = true;
   home.homeDirectory = "/home/${userName}";
   home.username = userName;
 
