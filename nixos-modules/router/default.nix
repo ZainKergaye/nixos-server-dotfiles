@@ -218,6 +218,15 @@
           cache_location = "/var/lib/loki/tsdb-cache";
         };
         compactor.working_directory = "/var/lib/loki/compactor";
+        # Loki 3.x initializes the local ruler even when no rules are
+        # configured.  Give it explicit local storage so startup succeeds.
+        ruler = {
+          rule_path = "/var/lib/loki/rules-tmp";
+          storage = {
+            type = "local";
+            local.directory = "/var/lib/loki/rules";
+          };
+        };
         limits_config.retention_period = "30d";
       };
     };
@@ -262,6 +271,8 @@
 
     systemd.tmpfiles.rules = lib.mkIf config.router.ids.enable [
       "d /var/lib/node_exporter/textfile 0755 root root -"
+      "d /var/lib/loki/rules 0750 loki loki -"
+      "d /var/lib/loki/rules-tmp 0750 loki loki -"
     ];
 
     systemd.services.suricata-eve-metrics = lib.mkIf config.router.ids.enable {
