@@ -40,6 +40,7 @@
       "scrypted.s" = "10.10.10.11:11080";
       "apple.s" = "${config.router.lanHosts."node1.home"}:3232";
       "grafana.s" = "127.0.0.1:3000";
+      "blocky.s" = "127.0.0.1:4000"; # For blocking button on grafana dashboard
       "nas.s" = "10.10.10.39:8080";
     };
   };
