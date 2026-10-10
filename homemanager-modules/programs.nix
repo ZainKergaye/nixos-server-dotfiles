@@ -1,6 +1,6 @@
 { inputs, ... }: {
   programs.fastfetch.enable = true;
   home.packages = [
-    inputs.nixvim-custom.packages.${stdenv.hostPlatform.system}.default
+    inputs.nixvim-custom.packages."x86_64-linux".default
   ];
 }
