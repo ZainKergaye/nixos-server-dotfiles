@@ -184,6 +184,73 @@
       extraFlags = [ "--collector.textfile.directory=/var/lib/node_exporter/textfile" ];
     };
 
+    # Store structured EVE events locally without exposing a log database on
+    # the network.  Vector tails the JSON event stream and Loki retains it for
+    # dashboard exploration and alert triage.
+    services.loki = lib.mkIf config.router.ids.enable {
+      enable = true;
+      configuration = {
+        auth_enabled = false;
+        server = {
+          http_listen_address = "127.0.0.1";
+          http_listen_port = 3100;
+        };
+        common = {
+          path_prefix = "/var/lib/loki";
+          replication_factor = 1;
+          ring.kvstore.store = "inmemory";
+          storage.filesystem.chunks_directory = "/var/lib/loki/chunks";
+        };
+        schema_config.configs = [
+          {
+            from = "2024-01-01";
+            store = "tsdb";
+            object_store = "filesystem";
+            schema = "v13";
+            index = {
+              prefix = "index_";
+              period = "24h";
+            };
+          }
+        ];
+        storage_config.tsdb_shipper = {
+          active_index_directory = "/var/lib/loki/tsdb-index";
+          cache_location = "/var/lib/loki/tsdb-cache";
+        };
+        compactor.working_directory = "/var/lib/loki/compactor";
+        limits_config.retention_period = "30d";
+      };
+    };
+
+    services.vector = lib.mkIf config.router.ids.enable {
+      enable = true;
+      settings = {
+        sources.suricata_eve = {
+          type = "file";
+          include = [ "/var/log/suricata/eve.json" ];
+          read_from = "end";
+          decoding.codec = "json";
+        };
+        sinks.loki = {
+          type = "loki";
+          inputs = [ "suricata_eve" ];
+          endpoint = "http://127.0.0.1:3100";
+          encoding.codec = "json";
+          labels = {
+            job = "suricata";
+            host = "main";
+            event_type = "{{ event_type }}";
+          };
+        };
+      };
+    };
+
+    systemd.services.vector = lib.mkIf config.router.ids.enable {
+      after = [ "loki.service" "suricata.service" ];
+      requires = [ "loki.service" ];
+      serviceConfig.SupplementaryGroups = [ config.services.suricata.settings.run-as.group ];
+    };
+
     systemd.tmpfiles.rules = lib.mkIf config.router.ids.enable [
       "d /var/lib/node_exporter/textfile 0755 root root -"
     ];
@@ -249,5 +316,6 @@
     };
 
     grafana.dashboards."router.json" = ./dashboard.json;
+    grafana.dashboards."suricata-events.json" = ./suricata-events-dashboard.json;
   };
 }

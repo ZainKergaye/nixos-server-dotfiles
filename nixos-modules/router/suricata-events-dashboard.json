@@ -1,0 +1,80 @@
+{
+  "annotations": { "list": [] },
+  "description": "Structured Suricata EVE events ingested by Vector and stored in Loki.",
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 0,
+  "id": null,
+  "links": [],
+  "panels": [
+    {
+      "datasource": { "type": "loki", "uid": "loki" },
+      "fieldConfig": { "defaults": { "color": { "mode": "palette-classic" }, "custom": { "drawStyle": "line", "fillOpacity": 15, "lineWidth": 1 }, "unit": "short" }, "overrides": [] },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 0 },
+      "id": 1,
+      "options": { "legend": { "displayMode": "list", "placement": "bottom" }, "tooltip": { "mode": "single" } },
+      "targets": [
+        { "expr": "sum(count_over_time({job=\"suricata\", event_type=\"alert\"}[$__interval]))", "legendFormat": "alerts", "refId": "A" },
+        { "expr": "sum(count_over_time({job=\"suricata\", event_type=\"flow\"}[$__interval]))", "legendFormat": "flows", "refId": "B" }
+      ],
+      "title": "Suricata events",
+      "type": "timeseries"
+    },
+    {
+      "datasource": { "type": "loki", "uid": "loki" },
+      "fieldConfig": { "defaults": { "color": { "mode": "thresholds" }, "mappings": [], "thresholds": { "mode": "absolute", "steps": [ { "color": "green", "value": null } ] } }, "overrides": [] },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 0 },
+      "id": 2,
+      "options": { "colorMode": "value", "graphMode": "area", "justifyMode": "auto", "orientation": "auto", "reduceOptions": { "calcs": [ "lastNotNull" ], "fields": "", "values": false }, "textMode": "auto" },
+      "targets": [ { "expr": "sum(count_over_time({job=\"suricata\", event_type=\"alert\"}[24h]))", "legendFormat": "Alerts (24h)", "refId": "A" } ],
+      "title": "Alerts in the last 24 hours",
+      "type": "stat"
+    },
+    {
+      "datasource": { "type": "loki", "uid": "loki" },
+      "gridPos": { "h": 16, "w": 24, "x": 0, "y": 8 },
+      "id": 3,
+      "options": { "dedupStrategy": "none", "enableLogDetails": true, "prettifyJSON": true, "showCommonLabels": false, "showLabels": false, "showTime": true, "sortOrder": "Descending", "wrapLogMessage": true },
+      "targets": [ { "expr": "{job=\"suricata\", event_type=\"alert\"} | json", "refId": "A" } ],
+      "title": "Alert events",
+      "type": "logs"
+    },
+    {
+      "datasource": { "type": "loki", "uid": "loki" },
+      "gridPos": { "h": 16, "w": 24, "x": 0, "y": 24 },
+      "id": 4,
+      "options": { "dedupStrategy": "none", "enableLogDetails": true, "prettifyJSON": true, "showCommonLabels": false, "showLabels": false, "showTime": true, "sortOrder": "Descending", "wrapLogMessage": true },
+      "targets": [ { "expr": "{job=\"suricata\", event_type=~\"$event_type\"} | json", "refId": "A" } ],
+      "title": "All EVE events",
+      "type": "logs"
+    }
+  ],
+  "refresh": "30s",
+  "schemaVersion": 41,
+  "tags": [ "suricata", "ids", "ips", "loki" ],
+  "templating": {
+    "list": [
+      {
+        "current": { "selected": true, "text": "All", "value": ".+" },
+        "datasource": { "type": "loki", "uid": "loki" },
+        "definition": "label_values({job=\"suricata\"}, event_type)",
+        "includeAll": true,
+        "label": "Event type",
+        "multi": false,
+        "name": "event_type",
+        "options": [],
+        "query": "label_values({job=\"suricata\"}, event_type)",
+        "refresh": 1,
+        "regex": "",
+        "type": "query"
+      }
+    ]
+  },
+  "time": { "from": "now-24h", "to": "now" },
+  "timepicker": {},
+  "timezone": "browser",
+  "title": "Suricata Events",
+  "uid": "suricata-events",
+  "version": 1,
+  "weekStart": ""
+}

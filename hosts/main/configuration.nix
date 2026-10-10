@@ -28,6 +28,14 @@
   adblock.enable = true;
   prometheus.server.enable = true;
   grafana.enable = true;
+  grafana.datasources = [
+    {
+      name = "Loki";
+      uid = "loki";
+      type = "loki";
+      url = "http://127.0.0.1:3100";
+    }
+  ];
   wireguardGateway = {
     enable = true;
     peers = [

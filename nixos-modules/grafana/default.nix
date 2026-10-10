@@ -27,7 +27,12 @@ in
             url = mkOption {
               type = str;
             };
-            isDefault = mkEnableOption;
+            isDefault = mkEnableOption "make this the default datasource";
+            uid = mkOption {
+              type = types.nullOr types.str;
+              default = null;
+              description = "Optional stable Grafana datasource UID";
+            };
           };
         });
       description = "Datasources";
