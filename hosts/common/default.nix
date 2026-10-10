@@ -15,7 +15,7 @@
   cominDeployment.enable = true;
 
   prometheus.enable = true;
-  ups.enable = true;
+  #ups.enable = true;
 
   # virtualisation.graphics = false;
 
