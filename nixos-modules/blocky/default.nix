@@ -21,7 +21,6 @@
       settings = {
         ports.dns = 53;
         upstreams.groups.default = [
-          "https://one.one.one.one/dns-query"
           "1.1.1.1" # Cloudflare
           "208.67.222.222" # OpenDNS
           "9.9.9.9" # Quad9

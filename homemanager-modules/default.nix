@@ -9,6 +9,7 @@
   imports = [
     ./programs.nix
     ./shell.nix
+    ./tmux.nix
   ];
   home.homeDirectory = "/home/${userName}";
   home.username = userName;
