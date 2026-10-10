@@ -12,11 +12,18 @@
     enable = true;
   };
   networking.nameservers = [ "localhost" ];
-  # Keep SOPS' age identity separate from the SSH host key.  This key is
-  # created on the first deployment and remains local to main.
-  sops.age = {
-    keyFile = "/var/lib/sops-nix/key.txt";
-    generateKey = true;
+  sops.age.sshKeyPaths = [ "/etc/ssh/ssh_host_ed25519_key" ];
+  sops.defaultSopsFile = ../../secrets/main.yaml;
+  sops.secrets.cloudflare-ddns-token = {
+    owner = "cloudflare-ddns";
+    group = "cloudflare-ddns";
+    mode = "0400";
+  };
+  services.cloudflare-ddns = {
+    enable = true;
+    credentialsFile = config.sops.secrets.cloudflare-ddns-token.path;
+    domains = [ "vpn.kergaye.com" ];
+    updateCron = "@every 30m";
   };
   adblock.enable = true;
   prometheus.server.enable = true;
