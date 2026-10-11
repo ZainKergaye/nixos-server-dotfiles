@@ -1,19 +1,104 @@
 {
   "uid": "comin-overview",
   "title": "Comin Deployments",
+  "description": "Deployment state and repository fetch results reported by Comin.",
   "tags": ["comin", "deployments", "prometheus"],
   "timezone": "browser",
   "schemaVersion": 39,
-  "version": 1,
+  "version": 2,
   "refresh": "30s",
+  "templating": {
+    "list": [
+      {
+        "name": "host",
+        "label": "Host",
+        "type": "query",
+        "datasource": { "type": "prometheus", "uid": "Prometheus" },
+        "query": "label_values(up{job=\"comin\"}, host)",
+        "includeAll": true,
+        "allValue": ".*",
+        "multi": true,
+        "current": { "text": "All", "value": "$__all" }
+      },
+      {
+        "name": "remote",
+        "label": "Remote",
+        "type": "query",
+        "datasource": { "type": "prometheus", "uid": "Prometheus" },
+        "query": "label_values(comin_fetch_count{host=~\"$host\"}, remote_name)",
+        "includeAll": true,
+        "allValue": ".*",
+        "multi": true,
+        "current": { "text": "All", "value": "$__all" }
+      }
+    ]
+  },
   "panels": [
     {
       "id": 1,
       "title": "Comin exporter availability",
+      "description": "One value per selected host. A down exporter prevents visibility into its deployment state.",
       "type": "stat",
-      "targets": [{ "expr": "up{job=\"comin\"}", "legendFormat": "{{host}}", "refId": "A" }],
-      "fieldConfig": { "defaults": { "mappings": [{ "options": { "0": { "text": "down", "color": "red" }, "1": { "text": "up", "color": "green" } }, "type": "value" }] }, "overrides": [] },
-      "gridPos": { "h": 8, "w": 24, "x": 0, "y": 0 }
+      "targets": [{ "expr": "up{job=\"comin\",host=~\"$host\"}", "legendFormat": "{{host}}", "refId": "A", "instant": true }],
+      "fieldConfig": {
+        "defaults": {
+          "mappings": [{ "options": { "0": { "text": "down", "color": "red" }, "1": { "text": "up", "color": "green" } }, "type": "value" }],
+          "noValue": "not scraped"
+        },
+        "overrides": []
+      },
+      "options": { "colorMode": "value", "graphMode": "none", "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false } },
+      "gridPos": { "h": 7, "w": 8, "x": 0, "y": 0 }
+    },
+    {
+      "id": 2,
+      "title": "Hosts reporting deployment state",
+      "description": "Comin resets comin_deployment_info before setting the current deployment. A host is counted once it reports its current deployment status.",
+      "type": "stat",
+      "targets": [{ "expr": "count(comin_deployment_info{host=~\"$host\"})", "refId": "A", "instant": true }],
+      "fieldConfig": { "defaults": { "decimals": 0, "noValue": "0" }, "overrides": [] },
+      "options": { "colorMode": "value", "graphMode": "none", "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false } },
+      "gridPos": { "h": 7, "w": 8, "x": 8, "y": 0 }
+    },
+    {
+      "id": 3,
+      "title": "Fetches in selected range",
+      "description": "Total Comin repository fetch attempts over the dashboard time range. The panels below break these down by status.",
+      "type": "stat",
+      "targets": [{ "expr": "sum(increase(comin_fetch_count{host=~\"$host\",remote_name=~\"$remote\"}[$__range]))", "refId": "A" }],
+      "fieldConfig": { "defaults": { "decimals": 0, "noValue": "0" }, "overrides": [] },
+      "options": { "colorMode": "value", "graphMode": "none", "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false } },
+      "gridPos": { "h": 7, "w": 8, "x": 16, "y": 0 }
+    },
+    {
+      "id": 4,
+      "title": "Latest deployment per host",
+      "description": "The active comin_deployment_info series carries the commit ID and deployment status labels.",
+      "type": "table",
+      "targets": [{ "expr": "comin_deployment_info{host=~\"$host\"}", "format": "table", "refId": "A", "instant": true }],
+      "fieldConfig": { "defaults": { "custom": { "align": "auto", "cellOptions": { "type": "auto" }, "inspect": false }, "mappings": [] }, "overrides": [] },
+      "options": { "cellHeight": "sm", "showHeader": true },
+      "gridPos": { "h": 9, "w": 24, "x": 0, "y": 7 }
+    },
+    {
+      "id": 5,
+      "title": "Fetches by result",
+      "description": "Per-second repository fetch rate, grouped by host, remote, and Comin result status.",
+      "type": "timeseries",
+      "targets": [{ "expr": "sum by (host, remote_name, status) (rate(comin_fetch_count{host=~\"$host\",remote_name=~\"$remote\"}[$__rate_interval]))", "legendFormat": "{{host}} / {{remote_name}} / {{status}}", "refId": "A" }],
+      "fieldConfig": { "defaults": { "unit": "ops", "min": 0 }, "overrides": [] },
+      "options": { "legend": { "calcs": ["lastNotNull", "sum"], "displayMode": "table", "placement": "bottom", "showLegend": true }, "tooltip": { "mode": "multi", "sort": "desc" } },
+      "gridPos": { "h": 9, "w": 12, "x": 0, "y": 16 }
+    },
+    {
+      "id": 6,
+      "title": "Fetch results in selected range",
+      "description": "Total poll attempts over the dashboard time range, grouped by result status.",
+      "type": "bargauge",
+      "targets": [{ "expr": "sum by (host, remote_name, status) (increase(comin_fetch_count{host=~\"$host\",remote_name=~\"$remote\"}[$__range]))", "legendFormat": "{{host}} / {{remote_name}} / {{status}}", "refId": "A", "instant": true }],
+      "fieldConfig": { "defaults": { "decimals": 0, "min": 0 }, "overrides": [] },
+      "options": { "displayMode": "gradient", "orientation": "horizontal", "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false }, "showUnfilled": true, "valueMode": "color" },
+      "gridPos": { "h": 9, "w": 12, "x": 12, "y": 16 }
     }
   ]
 }

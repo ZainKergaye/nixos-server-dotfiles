@@ -205,7 +205,8 @@ every 60 seconds and deploys the matching `nixosConfigurations.<hostname>`
 output. Comin retains recent successful and bootable deployments, so a failed
 commit does not replace the current system. Its Prometheus exporter is exposed
 only to the central collector on port `4243`; Grafana provisions a **Comin
-Deployments** dashboard for exporter health.
+Deployments** dashboard for exporter availability, each host's last reported
+commit and deployment status, and fetch results grouped by remote and status.
 
 The configured repository URL is the public HTTPS GitHub URL. If this
 repository is private, override `cominDeployment.repository` with an
