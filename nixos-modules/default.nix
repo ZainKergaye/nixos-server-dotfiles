@@ -6,7 +6,7 @@
     ./grafana
     ./immich
     ./lan-node
-    ./netprobe
+    #./netprobe
     ./prometheus
     ./reverse_proxy
     ./router
