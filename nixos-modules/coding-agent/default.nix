@@ -234,7 +234,18 @@ in
       wantedBy = [ "multi-user.target" ];
       serviceConfig.Type = "oneshot";
       script = ''
-        ${pkgs.curl}/bin/curl --fail --retry 30 --retry-connrefused --retry-delay 1 \
+        attempts=0
+        until ${pkgs.curl}/bin/curl --silent --show-error --fail --max-time 5 \
+          http://127.0.0.1:${toString openHandsPort}/health >/dev/null; do
+          attempts=$((attempts + 1))
+          if [ "$attempts" -ge 150 ]; then
+            echo "OpenHands Agent Server did not become ready within five minutes" >&2
+            exit 1
+          fi
+          sleep 2
+        done
+
+        ${pkgs.curl}/bin/curl --fail --show-error \
           -H 'Authorization: Bearer ${openHandsApiKey}' \
           -H 'Content-Type: application/json' \
           --data-binary @${openHandsProfile} \
