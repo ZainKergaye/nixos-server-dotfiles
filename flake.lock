@@ -248,6 +248,22 @@
         "type": "github"
       }
     },
+    "open-webui-nixpkgs": {
+      "locked": {
+        "lastModified": 1776836482,
+        "narHash": "sha256-N+EDMArt2/JBtu2fTQTCgiGXOKw4TKUk9hLyN9bTuuc=",
+        "owner": "NixOS",
+        "repo": "nixpkgs",
+        "rev": "274c537c291b53d4e7315d423da8d4ae38d7528f",
+        "type": "github"
+      },
+      "original": {
+        "owner": "NixOS",
+        "repo": "nixpkgs",
+        "rev": "274c537c291b53d4e7315d423da8d4ae38d7528f",
+        "type": "github"
+      }
+    },
     "root": {
       "inputs": {
         "comin": "comin",
@@ -256,6 +272,7 @@
         "nixos-hardware": "nixos-hardware",
         "nixpkgs": "nixpkgs_4",
         "nixvim-custom": "nixvim-custom",
+        "open-webui-nixpkgs": "open-webui-nixpkgs",
         "sops-nix": "sops-nix"
       }
     },
