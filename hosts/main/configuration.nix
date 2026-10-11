@@ -49,6 +49,11 @@
         publicKey = "Lox4BpBF+zFFnibZJEB2vFgqlASwV6wP1uMa6mVngSE=";
         allowedIP = "10.100.0.3/32";
       }
+      {
+        name = "iPad";
+        publicKey = "zMMBtTykYLBoiaP5CUzQ79tJJ8oeitiaAXDtA+662SM=";
+        allowedIP = "10.100.0.4/32";
+      }
     ];
   };
   #ups.server.enable = true;
