@@ -11,6 +11,23 @@ let
     system = pkgs.stdenv.hostPlatform.system;
     config.allowUnfree = true;
   };
+  openHandsPort = 8000;
+  openHandsApiKey = "local-agent-gateway";
+  openHandsNetworkCidr = "172.30.0.0/24";
+  openHandsProfile = pkgs.writeText "openhands-local-coder-profile.json" (
+    builtins.toJSON {
+      include_secrets = false;
+      llm = {
+        model = "openai/${cfg.localModel}";
+        api_key = "local-gateway";
+        api_mode = "chat";
+        base_url = "http://172.30.0.1:4000/v1";
+        max_input_tokens = cfg.contextLength;
+        max_output_tokens = 4096;
+        native_tool_calling = false;
+      };
+    }
+  );
 in
 {
   options.codingAgent = with lib; {
@@ -18,8 +35,10 @@ in
 
     localModel = mkOption {
       type = types.str;
-      default = "qwen3:8b";
-      description = "Ollama model pulled for private, everyday requests";
+      # The 7B Q4 model is 4.7 GiB, leaving sufficient P4 VRAM for a useful
+      # KV cache at the configured context size.
+      default = "qwen2.5-coder:7b";
+      description = "Ollama coding model pulled for private, local requests";
     };
 
     vulkanVisibleDevices = mkOption {
@@ -30,8 +49,8 @@ in
 
     contextLength = mkOption {
       type = types.ints.positive;
-      default = 4096;
-      description = "Ollama context window; deliberately modest for the P4's 8 GiB VRAM";
+      default = 24576;
+      description = "Ollama context window sized to remain in the P4's 8 GiB VRAM";
     };
 
     webUiPort = mkOption {
@@ -82,14 +101,14 @@ in
     openHandsWorkspace = mkOption {
       type = types.str;
       default = "/var/lib/coding-agent/workspaces";
-      description = "Rootless Podman workspace directory for OpenHands jobs";
+      description = "Persistent workspace directory mounted into the OpenHands sandbox";
     };
   };
 
   config = lib.mkIf cfg.enable {
-    # The Tesla P4 is Pascal and has 8 GiB of VRAM. Keep the local model and
-    # the context budget small enough that the host's 16 GiB RAM is not used as
-    # an accidental extension of GPU memory.
+    # The Tesla P4 has 8 GiB of VRAM. Qwen2.5-Coder 7B is the strongest
+    # code-specialized model that leaves enough room for a 24k-token KV cache;
+    # larger models or a full 32k cache would spill into system RAM.
     services.ollama = {
       enable = true;
       # CUDA 12.9 currently fails to build in this Nixpkgs revision because
@@ -106,12 +125,11 @@ in
       };
     };
 
-    # Every local or hosted model is reached through this loopback-only,
-    # OpenAI-compatible endpoint. Hosted-provider secrets come from a runtime
-    # environment file rather than becoming world-readable Nix store paths.
+    # The local model is served to host processes and the isolated OpenHands
+    # network. Hosted-provider secrets remain in a runtime environment file.
     services.litellm = {
       enable = true;
-      host = "127.0.0.1";
+      host = "0.0.0.0";
       port = 4000;
       environmentFile = cfg.litellmEnvironmentFile;
       settings = {
@@ -127,9 +145,8 @@ in
       };
     };
 
-    # Open WebUI is the only agent-stack listener exposed beyond loopback. Keep
-    # its backend connection declarative so it cannot be redirected to an
-    # arbitrary provider from the web UI.
+    # Open WebUI presents both the normal LiteLLM model and the OpenHands
+    # OpenAI-compatible gateway as selectable models.
     services.open-webui = {
       enable = true;
       # Pin to Open WebUI 0.9.1 from Nixpkgs before Python 3.14/TorchCodec
@@ -140,22 +157,46 @@ in
       environment = {
         ENABLE_OLLAMA_API = "False";
         ENABLE_OPENAI_API = "True";
-        OPENAI_API_BASE_URL = "http://127.0.0.1:4000/v1";
-        OPENAI_API_KEY = "local-gateway";
+        OPENAI_API_BASE_URLS = "http://127.0.0.1:4000/v1;http://127.0.0.1:${toString openHandsPort}/v1";
+        OPENAI_API_KEYS = "local-gateway;${openHandsApiKey}";
         ENABLE_PERSISTENT_CONFIG = "False";
         WEBUI_AUTH = "True";
         WEBUI_URL = "http://ai.s";
       };
     };
 
-    # OpenHands needs an execution runtime. Provide a dedicated rootless
-    # workspace, but intentionally do not mount a Docker/Podman socket into an
-    # agent container: such a socket is effectively host-root access.
-    virtualisation.podman.enable = true;
-    users.groups.coding-agent = { };
+    # OpenHands Agent Server runs directly in its sandbox container. Deliberately
+    # do not mount a Docker/Podman socket: a socket would give agent code
+    # effective host-root access. UID/GID 10001 matches the image's `openhands`
+    # user, so the persistent workspace remains writable without root.
+    virtualisation.docker.enable = true;
+    virtualisation.oci-containers = {
+      backend = "docker";
+      containers.openhands-agent = {
+        image = "ghcr.io/openhands/agent-server:1.54.0-python";
+        autoStart = true;
+        cmd = [ "--host" "0.0.0.0" "--port" (toString openHandsPort) ];
+        ports = [ "127.0.0.1:${toString openHandsPort}:${toString openHandsPort}" ];
+        volumes = [ "${cfg.openHandsWorkspace}:/workspace" ];
+        environment = {
+          DO_NOT_TRACK = "1";
+          OH_PERSISTENCE_DIR = "/workspace/.openhands";
+          OH_SECRET_KEY = "local-agent-state-key";
+          OH_SESSION_API_KEYS_0 = openHandsApiKey;
+        };
+        extraOptions = [
+          "--network=coding-agent"
+          "--cap-drop=ALL"
+          "--security-opt=no-new-privileges"
+          "--pids-limit=512"
+        ];
+      };
+    };
+    users.groups.coding-agent.gid = 10001;
     users.users.coding-agent = {
       isSystemUser = true;
       group = "coding-agent";
+      uid = 10001;
       home = "/var/lib/coding-agent";
       createHome = true;
     };
@@ -163,9 +204,52 @@ in
       "d ${cfg.openHandsWorkspace} 0750 coding-agent coding-agent -"
     ];
 
+    # A user-defined network gives the sandbox access only to LiteLLM's model
+    # endpoint on the host; it never receives the host Docker socket.
+    systemd.services.docker-coding-agent-network = {
+      description = "Coding-agent Docker network";
+      after = [ "docker.service" ];
+      requires = [ "docker.service" ];
+      wantedBy = [ "multi-user.target" ];
+      before = [ "docker-openhands-agent.service" ];
+      serviceConfig.Type = "oneshot";
+      script = ''
+        if ! ${config.virtualisation.docker.package}/bin/docker network inspect coding-agent >/dev/null 2>&1; then
+          ${config.virtualisation.docker.package}/bin/docker network create --subnet ${openHandsNetworkCidr} coding-agent
+        fi
+      '';
+    };
+    systemd.services.docker-openhands-agent = {
+      after = [ "docker-coding-agent-network.service" ];
+      requires = [ "docker-coding-agent-network.service" ];
+    };
+
+    # Seed the local LLM profile before Open WebUI lists the Agent Server's
+    # models. The profile points through LiteLLM, preserving one local model
+    # path for ordinary chats and agent conversations.
+    systemd.services.coding-agent-openhands-profile = {
+      description = "Configure the OpenHands local coding-model profile";
+      after = [ "docker-openhands-agent.service" ];
+      requires = [ "docker-openhands-agent.service" ];
+      wantedBy = [ "multi-user.target" ];
+      serviceConfig.Type = "oneshot";
+      script = ''
+        ${pkgs.curl}/bin/curl --fail --retry 30 --retry-connrefused --retry-delay 1 \
+          -H 'Authorization: Bearer ${openHandsApiKey}' \
+          -H 'Content-Type: application/json' \
+          --data-binary @${openHandsProfile} \
+        http://127.0.0.1:${toString openHandsPort}/api/profiles/local-coder
+      '';
+    };
+    systemd.services.open-webui = {
+      after = [ "coding-agent-openhands-profile.service" ];
+      requires = [ "coding-agent-openhands-profile.service" ];
+    };
+
     networking.firewall.extraCommands = lib.mkAfter ''
       iptables -A nixos-fw -p tcp --dport ${toString cfg.webUiPort} -s ${cfg.lanCidr} -j ACCEPT
       iptables -A nixos-fw -p tcp --dport ${toString cfg.webUiPort} -s ${cfg.wireGuardCidr} -j ACCEPT
+      iptables -A nixos-fw -p tcp --dport 4000 -s ${openHandsNetworkCidr} -j ACCEPT
     '';
   };
 }
