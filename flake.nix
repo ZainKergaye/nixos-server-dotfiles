@@ -22,6 +22,10 @@
       url = "github:Mic92/sops-nix";
       inputs.nixpkgs.follows = "nixpkgs";
     };
+    netprobe = {
+      url = "github:plaintextpackets/netprobe_lite";
+      flake = false;
+    };
   };
 
   nixConfig = {
@@ -46,6 +50,7 @@
       home-manager,
       comin,
       sops-nix,
+      netprobe,
       ...
     }@inputs:
     let

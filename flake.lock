@@ -95,6 +95,22 @@
         "type": "github"
       }
     },
+    "netprobe": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1736976147,
+        "narHash": "sha256-dzLT1XeByTmXnXbwVjc0zNb1YE+JIex+FW7R2ZKEaos=",
+        "owner": "plaintextpackets",
+        "repo": "netprobe_lite",
+        "rev": "03565c26cb3338eb0ef1646bdf9d20e33791c8ee",
+        "type": "github"
+      },
+      "original": {
+        "owner": "plaintextpackets",
+        "repo": "netprobe_lite",
+        "type": "github"
+      }
+    },
     "nixos-hardware": {
       "inputs": {
         "nixpkgs": "nixpkgs_3"
@@ -269,6 +285,7 @@
         "comin": "comin",
         "disko": "disko",
         "home-manager": "home-manager",
+        "netprobe": "netprobe",
         "nixos-hardware": "nixos-hardware",
         "nixpkgs": "nixpkgs_4",
         "nixvim-custom": "nixvim-custom",
