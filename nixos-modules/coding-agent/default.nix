@@ -186,6 +186,9 @@ in
         };
         extraOptions = [
           "--network=coding-agent"
+          # Do not rely on the image's default USER: it must match the owner
+          # of the host bind mount configured below.
+          "--user=10001:10001"
           "--cap-drop=ALL"
           "--security-opt=no-new-privileges"
           "--pids-limit=512"
@@ -222,6 +225,15 @@ in
     systemd.services.docker-openhands-agent = {
       after = [ "docker-coding-agent-network.service" ];
       requires = [ "docker-coding-agent-network.service" ];
+      # Docker creates a missing bind-mount source as root.  tmpfiles' `d`
+      # action intentionally leaves an already existing directory untouched,
+      # so a deployment where Docker won that race would leave the image's
+      # UID 10001 unable to traverse /workspace.  Repair the directory before
+      # every container start, including after an out-of-band removal.
+      preStart = ''
+        ${pkgs.coreutils}/bin/install -d -m 0750 -o coding-agent -g coding-agent \
+          ${lib.escapeShellArg cfg.openHandsWorkspace}
+      '';
     };
 
     # Seed the local LLM profile before Open WebUI lists the Agent Server's
@@ -246,7 +258,7 @@ in
         done
 
         ${pkgs.curl}/bin/curl --fail --show-error \
-          -H 'Authorization: Bearer ${openHandsApiKey}' \
+          -H 'X-Session-API-Key: ${openHandsApiKey}' \
           -H 'Content-Type: application/json' \
           --data-binary @${openHandsProfile} \
         http://127.0.0.1:${toString openHandsPort}/api/profiles/local-coder
