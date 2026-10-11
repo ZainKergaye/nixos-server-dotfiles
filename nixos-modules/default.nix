@@ -2,6 +2,7 @@
   imports = [
     ./blocky
     ./comin
+    ./coding-agent
     ./grafana
     ./immich
     ./lan-node

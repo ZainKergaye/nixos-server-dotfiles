@@ -198,6 +198,23 @@ WireGuard peer metrics are collected locally by Prometheus and shown in the
 each peer's latest handshake, and per-peer upload/download rates. The exporter
 only listens on `127.0.0.1:9586`.
 
+## Node3 coding-agent services
+
+`node3` runs the private coding-agent stack. Ollama uses only the Tesla P4
+(`CUDA_VISIBLE_DEVICES=1`) and declaratively downloads `qwen3:8b`; its API and
+the LiteLLM OpenAI-compatible gateway both listen only on loopback. Open WebUI
+is the LAN/WireGuard-facing entry point at `http://ai.s`, routed through Caddy
+on `main`, and keeps its connection to LiteLLM declarative.
+
+Add hosted models through `codingAgent.additionalModels` and put their provider
+keys in a root-readable environment file referenced by
+`codingAgent.litellmEnvironmentFile`. For example, a LiteLLM model can use
+`api_key = "os.environ/OPENAI_API_KEY"`; do not put that key in Nix source.
+
+`/var/lib/coding-agent/workspaces` is owned by the dedicated `coding-agent`
+user for rootless Podman/OpenHands jobs. No container socket is exposed to an
+agent: use a remote sandbox runtime before enabling unattended OpenHands jobs.
+
 ## Continuous deployment with Comin
 
 Every host runs Comin in pull mode. It polls the repository's `main` branch

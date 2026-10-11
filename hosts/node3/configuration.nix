@@ -11,6 +11,8 @@
     address = "10.10.10.15";
   };
 
+  codingAgent.enable = true;
+
   boot.initrd.availableKernelModules = [
     "xhci_pci"
     "ahci"
