@@ -127,6 +127,13 @@ in
     # arbitrary provider from the web UI.
     services.open-webui = {
       enable = true;
+      # The default package set currently selects Python 3.14, where
+      # torchcodec 0.16.0 fails its MP3 encoder tests. Open WebUI's embedding
+      # dependency pulls that package in, so use the supported Python 3.13
+      # dependency set until the Python 3.14 failure is fixed upstream.
+      package = pkgs.open-webui.override {
+        python3Packages = pkgs.python313Packages;
+      };
       host = "0.0.0.0";
       port = cfg.webUiPort;
       environment = {
