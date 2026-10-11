@@ -200,11 +200,13 @@ only listens on `127.0.0.1:9586`.
 
 ## Node3 coding-agent services
 
-`node3` runs the private coding-agent stack. Ollama uses only the Tesla P4
-(`CUDA_VISIBLE_DEVICES=1`) and declaratively downloads `qwen3:8b`; its API and
-the LiteLLM OpenAI-compatible gateway both listen only on loopback. Open WebUI
-is the LAN/WireGuard-facing entry point at `http://ai.s`, routed through Caddy
-on `main`, and keeps its connection to LiteLLM declarative.
+`node3` runs the private coding-agent stack. Ollama uses its Vulkan backend and
+only the Tesla P4 (`GGML_VK_VISIBLE_DEVICES=1`), avoiding the broken CUDA 12.9
+package path in the current Nixpkgs revision; it declaratively downloads
+`qwen3:8b`. Its API and the LiteLLM OpenAI-compatible gateway both listen only
+on loopback. Open WebUI is the LAN/WireGuard-facing entry point at
+`http://ai.s`, routed through Caddy on `main`, and keeps its connection to
+LiteLLM declarative.
 
 Add hosted models through `codingAgent.additionalModels` and put their provider
 keys in a root-readable environment file referenced by

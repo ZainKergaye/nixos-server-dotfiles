@@ -17,10 +17,10 @@ in
       description = "Ollama model pulled for private, everyday requests";
     };
 
-    cudaVisibleDevices = mkOption {
+    vulkanVisibleDevices = mkOption {
       type = types.str;
       default = "1";
-      description = "CUDA-visible GPU indexes for Ollama; node3's Tesla P4 is GPU 1";
+      description = "Vulkan-visible GPU indexes for Ollama; node3's Tesla P4 is GPU 1";
     };
 
     contextLength = mkOption {
@@ -87,11 +87,15 @@ in
     # an accidental extension of GPU memory.
     services.ollama = {
       enable = true;
-      package = pkgs.ollama-cuda;
+      # CUDA 12.9 currently fails to build in this Nixpkgs revision because
+      # cuda_nvrtc passes an invalid multi-output name to multiple-outputs.sh.
+      # Vulkan uses the installed proprietary NVIDIA driver directly and keeps
+      # the P4 GPU path free of that broken CUDA build closure.
+      package = pkgs.ollama-vulkan;
       host = "127.0.0.1";
       loadModels = [ cfg.localModel ];
       environmentVariables = {
-        CUDA_VISIBLE_DEVICES = cfg.cudaVisibleDevices;
+        GGML_VK_VISIBLE_DEVICES = cfg.vulkanVisibleDevices;
         OLLAMA_CONTEXT_LENGTH = toString cfg.contextLength;
         OLLAMA_NUM_PARALLEL = "1";
       };
