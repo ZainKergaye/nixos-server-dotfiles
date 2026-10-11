@@ -29,13 +29,13 @@
   prometheus.server.enable = true;
   grafana.enable = true;
   grafana.datasources = [
-    {
-      name = "Netprobe";
-      # This stable UID is referenced by Netprobe's upstream dashboard JSON.
-      uid = "PBFA97CFB590B2093";
-      type = "prometheus";
-      url = "http://10.10.10.15:9090";
-    }
+    # {
+    #   name = "Netprobe";
+    #   # This stable UID is referenced by Netprobe's upstream dashboard JSON.
+    #   uid = "PBFA97CFB590B2093";
+    #   type = "prometheus";
+    #   url = "http://10.10.10.15:9090";
+    # }
     {
       name = "Loki";
       uid = "loki";

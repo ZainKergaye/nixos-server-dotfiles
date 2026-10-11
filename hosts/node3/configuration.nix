@@ -12,7 +12,7 @@
   };
 
   codingAgent.enable = true;
-  netprobe.enable = true;
+  # netprobe.enable = true;
 
   boot.initrd.availableKernelModules = [
     "xhci_pci"
