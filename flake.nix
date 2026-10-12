@@ -3,10 +3,6 @@
 
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
-    # Open WebUI 0.9.1 predates the Python 3.14 TorchCodec regression in the
-    # current unstable package set. This input is intentionally only used by
-    # the coding-agent module.
-    open-webui-nixpkgs.url = "github:NixOS/nixpkgs/274c537c291b53d4e7315d423da8d4ae38d7528f";
     nixos-hardware.url = "github:NixOS/nixos-hardware/master";
     nixvim-custom.url = "github:ZainKergaye/nixvim_dotfiles";
     disko.url = "github:nix-community/disko/latest";

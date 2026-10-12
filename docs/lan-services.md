@@ -203,19 +203,21 @@ only listens on `127.0.0.1:9586`.
 `node3` runs the private coding-agent stack. Ollama uses its Vulkan backend and
 only the Tesla P4 (`GGML_VK_VISIBLE_DEVICES=1`), avoiding the broken CUDA 12.9
 package path in the current Nixpkgs revision; it declaratively downloads
-`qwen3:8b`. Its API and the LiteLLM OpenAI-compatible gateway both listen only
-on loopback. Open WebUI is the LAN/WireGuard-facing entry point at
-`http://ai.s`, routed through Caddy on `main`, and keeps its connection to
-LiteLLM declarative.
+`qwen2.5-coder:7b`. Its API and the LiteLLM OpenAI-compatible gateway both
+listen only on loopback. OpenHands Agent Canvas is the LAN/WireGuard-facing
+entry point at `http://ai.s/canvas`, routed through Caddy on `main`. Canvas,
+its Agent Server, and automation service run in one container; the Agent
+Server is seeded with the local LiteLLM profile declaratively.
 
 Add hosted models through `codingAgent.additionalModels` and put their provider
 keys in a root-readable environment file referenced by
 `codingAgent.litellmEnvironmentFile`. For example, a LiteLLM model can use
 `api_key = "os.environ/OPENAI_API_KEY"`; do not put that key in Nix source.
 
-`/var/lib/coding-agent/workspaces` is owned by the dedicated `coding-agent`
-user for rootless Podman/OpenHands jobs. No container socket is exposed to an
-agent: use a remote sandbox runtime before enabling unattended OpenHands jobs.
+`/var/lib/coding-agent/workspaces` stores Canvas conversations, profiles,
+encrypted settings, and automation state, and is owned by the dedicated
+`coding-agent` user. No container socket is exposed to an agent: use a remote
+sandbox runtime before enabling unattended OpenHands jobs.
 
 ## Continuous deployment with Comin
 

@@ -1,17 +1,12 @@
 {
   config,
-  inputs,
   lib,
   pkgs,
   ...
 }:
 let
   cfg = config.codingAgent;
-  openWebUiPkgs = import inputs.open-webui-nixpkgs {
-    system = pkgs.stdenv.hostPlatform.system;
-    config.allowUnfree = true;
-  };
-  openHandsPort = 8000;
+  agentCanvasPort = 8000;
   openHandsApiKey = "local-agent-gateway";
   openHandsNetworkCidr = "172.30.0.0/24";
   openHandsProfile = pkgs.writeText "openhands-local-coder-profile.json" (
@@ -53,22 +48,22 @@ in
       description = "Ollama context window sized to remain in the P4's 8 GiB VRAM";
     };
 
-    webUiPort = mkOption {
+    canvasPort = mkOption {
       type = types.port;
       default = 8081;
-      description = "LAN-facing Open WebUI port";
+      description = "LAN-facing OpenHands Agent Canvas port";
     };
 
     lanCidr = mkOption {
       type = types.str;
       default = "10.10.10.0/24";
-      description = "Physical LAN permitted to reach Open WebUI";
+      description = "Physical LAN permitted to reach OpenHands Agent Canvas";
     };
 
     wireGuardCidr = mkOption {
       type = types.str;
       default = "10.100.0.0/24";
-      description = "WireGuard clients permitted to reach Open WebUI";
+      description = "WireGuard clients permitted to reach OpenHands Agent Canvas";
     };
 
     litellmEnvironmentFile = mkOption {
@@ -145,44 +140,26 @@ in
       };
     };
 
-    # Open WebUI presents both the normal LiteLLM model and the OpenHands
-    # OpenAI-compatible gateway as selectable models.
-    services.open-webui = {
-      enable = true;
-      # Pin to Open WebUI 0.9.1 from Nixpkgs before Python 3.14/TorchCodec
-      # entered its dependency closure.
-      package = openWebUiPkgs.open-webui;
-      host = "0.0.0.0";
-      port = cfg.webUiPort;
-      environment = {
-        ENABLE_OLLAMA_API = "False";
-        ENABLE_OPENAI_API = "True";
-        OPENAI_API_BASE_URLS = "http://127.0.0.1:4000/v1;http://127.0.0.1:${toString openHandsPort}/v1";
-        OPENAI_API_KEYS = "local-gateway;${openHandsApiKey}";
-        ENABLE_PERSISTENT_CONFIG = "False";
-        WEBUI_AUTH = "True";
-        WEBUI_URL = "http://ai.s";
-      };
-    };
-
-    # OpenHands Agent Server runs directly in its sandbox container. Deliberately
-    # do not mount a Docker/Podman socket: a socket would give agent code
-    # effective host-root access. UID/GID 10001 matches the image's `openhands`
-    # user, so the persistent workspace remains writable without root.
+    # Agent Canvas combines its browser UI, Agent Server, and automation API in
+    # one container. Deliberately do not mount a Docker/Podman socket: a socket
+    # would give agent code effective host-root access. UID/GID 10001 matches
+    # Canvas's `openhands` user, so persistent state remains writable without
+    # running the container as root.
     virtualisation.docker.enable = true;
     virtualisation.oci-containers = {
       backend = "docker";
       containers.openhands-agent = {
-        image = "ghcr.io/openhands/agent-server:1.54.0-python";
+        image = "ghcr.io/openhands/agent-canvas:1.26.0";
         autoStart = true;
-        cmd = [ "--host" "0.0.0.0" "--port" (toString openHandsPort) ];
-        ports = [ "127.0.0.1:${toString openHandsPort}:${toString openHandsPort}" ];
-        volumes = [ "${cfg.openHandsWorkspace}:/workspace" ];
+        ports = [ "0.0.0.0:${toString cfg.canvasPort}:${toString agentCanvasPort}" ];
+        # Canvas persists conversations, profiles, encrypted secrets, and its
+        # automation database below ~/.openhands.  It starts its own Agent
+        # Server inside this container; users can only reach it through Canvas.
+        volumes = [ "${cfg.openHandsWorkspace}:/home/openhands/.openhands" ];
         environment = {
           DO_NOT_TRACK = "1";
-          OH_PERSISTENCE_DIR = "/workspace/.openhands";
           OH_SECRET_KEY = "local-agent-state-key";
-          OH_SESSION_API_KEYS_0 = openHandsApiKey;
+          LOCAL_BACKEND_API_KEY = openHandsApiKey;
         };
         extraOptions = [
           "--network=coding-agent"
@@ -236,11 +213,11 @@ in
       '';
     };
 
-    # Seed the local LLM profile before Open WebUI lists the Agent Server's
-    # models. The profile points through LiteLLM, preserving one local model
-    # path for ordinary chats and agent conversations.
+    # Seed Canvas's bundled Agent Server with the local LiteLLM profile. Its
+    # ingress proxies /api to the server, so the UI and this setup request use
+    # the same authenticated endpoint.
     systemd.services.coding-agent-openhands-profile = {
-      description = "Configure the OpenHands local coding-model profile";
+      description = "Configure the OpenHands Canvas local coding-model profile";
       after = [ "docker-openhands-agent.service" ];
       requires = [ "docker-openhands-agent.service" ];
       wantedBy = [ "multi-user.target" ];
@@ -248,10 +225,10 @@ in
       script = ''
         attempts=0
         until ${pkgs.curl}/bin/curl --silent --show-error --fail --max-time 5 \
-          http://127.0.0.1:${toString openHandsPort}/health >/dev/null; do
+          http://127.0.0.1:${toString cfg.canvasPort}/health >/dev/null; do
           attempts=$((attempts + 1))
           if [ "$attempts" -ge 150 ]; then
-            echo "OpenHands Agent Server did not become ready within five minutes" >&2
+            echo "OpenHands Canvas did not become ready within five minutes" >&2
             exit 1
           fi
           sleep 2
@@ -261,17 +238,13 @@ in
           -H 'X-Session-API-Key: ${openHandsApiKey}' \
           -H 'Content-Type: application/json' \
           --data-binary @${openHandsProfile} \
-        http://127.0.0.1:${toString openHandsPort}/api/profiles/local-coder
+        http://127.0.0.1:${toString cfg.canvasPort}/api/profiles/local-coder
       '';
-    };
-    systemd.services.open-webui = {
-      after = [ "coding-agent-openhands-profile.service" ];
-      requires = [ "coding-agent-openhands-profile.service" ];
     };
 
     networking.firewall.extraCommands = lib.mkAfter ''
-      iptables -A nixos-fw -p tcp --dport ${toString cfg.webUiPort} -s ${cfg.lanCidr} -j ACCEPT
-      iptables -A nixos-fw -p tcp --dport ${toString cfg.webUiPort} -s ${cfg.wireGuardCidr} -j ACCEPT
+      iptables -A nixos-fw -p tcp --dport ${toString cfg.canvasPort} -s ${cfg.lanCidr} -j ACCEPT
+      iptables -A nixos-fw -p tcp --dport ${toString cfg.canvasPort} -s ${cfg.wireGuardCidr} -j ACCEPT
       iptables -A nixos-fw -p tcp --dport 4000 -s ${openHandsNetworkCidr} -j ACCEPT
     '';
   };
