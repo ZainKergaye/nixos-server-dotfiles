@@ -50,7 +50,7 @@ in
 
       oh-my-zsh = {
         enable = true;
-        theme = "miloshadzic";
+        theme = "cypher";
         plugins = [
           "sudo"
           "colored-man-pages"

@@ -40,11 +40,11 @@
     lanHosts = options.mkOption {
       type = types.attrsOf types.str;
       default = {
-        "main.home" = "10.10.10.1";
-        "node1.home" = "10.10.10.11";
-        "node2.home" = "10.10.10.12";
-        "node3.home" = "10.10.10.15";
-        "node4.home" = "10.10.10.14";
+        "main.s" = "10.10.10.1";
+        "node1.s" = "10.10.10.11";
+        "node2.s" = "10.10.10.12";
+        "node3.s" = "10.10.10.15";
+        "node4.s" = "10.10.10.14";
       };
       description = "Static LAN hostname-to-address mappings served by Blocky";
     };
@@ -264,7 +264,10 @@
     };
 
     systemd.services.vector = lib.mkIf config.router.ids.enable {
-      after = [ "loki.service" "suricata.service" ];
+      after = [
+        "loki.service"
+        "suricata.service"
+      ];
       requires = [ "loki.service" ];
       serviceConfig.SupplementaryGroups = [ config.services.suricata.settings.run-as.group ];
     };
