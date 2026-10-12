@@ -7,6 +7,7 @@
 
   scrypted.enable = true;
   immich.enable = true;
+  netprobe.enable = true;
 
   hardware.cpu.intel.updateMicrocode = true;
   boot.loader = {

@@ -16,26 +16,28 @@ let
   netprobeSource = inputs.netprobe;
   networkOptions = aliases: [
     "--network=netprobe"
+    # Netprobe intentionally queries public resolvers as part of its internet
+    # health measurements.  Keep its own resolver path independent of the
+    # LAN's DNS filtering service, as in the upstream Compose deployment.
+    "--dns=8.8.8.8"
+    "--dns=8.8.4.4"
   ] ++ lib.concatMap (alias: [ "--network-alias=${alias}" ]) aliases;
 in
 {
   options.netprobe = with lib; {
     enable = mkEnableOption "the Netprobe internet-performance dashboard";
 
-    lanCidr = mkOption {
+    metrics.target = mkOption {
       type = types.str;
-      default = "10.10.10.0/24";
-      description = "Trusted LAN allowed to reach Netprobe's Prometheus endpoint";
+      default = "10.10.10.11";
+      description = "Address of the Netprobe Prometheus service";
     };
 
-    wireGuardCidr = mkOption {
-      type = types.str;
-      default = "10.100.0.0/24";
-      description = "WireGuard clients allowed to reach Netprobe's Prometheus endpoint";
-    };
+    grafana.enable = mkEnableOption "the Netprobe datasource and dashboard";
   };
 
-  config = lib.mkIf cfg.enable {
+  config = lib.mkMerge [
+    (lib.mkIf cfg.enable {
     virtualisation.docker.enable = true;
     virtualisation.oci-containers = {
       backend = "docker";
@@ -43,6 +45,9 @@ in
         netprobe-redis = {
           image = "redis:latest";
           autoStart = true;
+          volumes = [
+            "${netprobeSource}/config/redis/redis.conf:/etc/redis/redis.conf:ro"
+          ];
           extraOptions = networkOptions [ "redis" "netprobe-redis" ];
         };
 
@@ -119,17 +124,35 @@ in
       };
     };
 
-    # Main's Grafana is the only intended consumer of the endpoint. Allow it
-    # from the LAN and VPN without publishing it to a future WAN interface.
+    # Main's Grafana and Prometheus are the only intended consumers of this
+    # endpoint. Keep the container's metrics port inaccessible to other LAN
+    # and VPN clients, just like the other node-level exporters.
     networking.firewall.extraCommands = lib.mkAfter ''
-      iptables -A nixos-fw -p tcp --dport 9090 -s ${cfg.lanCidr} -j ACCEPT
-      iptables -A nixos-fw -p tcp --dport 9090 -s ${cfg.wireGuardCidr} -j ACCEPT
+      iptables -A nixos-fw -p tcp --dport 9090 -s ${config.prometheus.collectorAddress} -j ACCEPT
     '';
+    })
 
-    # The upstream dashboard is provisioned by the Grafana service on Main;
-    # Node 3 only runs the measurements and Prometheus exporter.
-    grafana.dashboards."netprobe.json" = lib.mkIf config.grafana.enable (
-      netprobeSource + "/config/grafana/dashboards/netprobe.json"
-    );
-  };
+    # Enable this on the Grafana host. Keeping the datasource and dashboard
+    # beside Netprobe's service definition prevents host configurations from
+    # duplicating Netprobe-specific Grafana provisioning details.
+    (lib.mkIf cfg.grafana.enable {
+      assertions = [
+        {
+          assertion = config.grafana.enable;
+          message = "netprobe.grafana.enable requires grafana.enable";
+        }
+      ];
+      grafana.datasources = [
+        {
+          name = "Netprobe";
+          # This stable UID is referenced by Netprobe's upstream dashboard.
+          uid = "PBFA97CFB590B2093";
+          type = "prometheus";
+          url = "http://${cfg.metrics.target}:9090";
+        }
+      ];
+      grafana.dashboards."netprobe.json" =
+        netprobeSource + "/config/grafana/dashboards/netprobe.json";
+    })
+  ];
 }
