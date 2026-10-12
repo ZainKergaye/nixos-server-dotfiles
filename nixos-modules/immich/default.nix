@@ -74,7 +74,7 @@ in
     };
 
     metrics.enable = mkEnableOption "Immich Prometheus metrics" // {
-      default = true;
+      default = false;
     };
 
     metrics.target = mkOption {
@@ -260,7 +260,7 @@ in
       grafana.dashboards."immich.json" = lib.mkIf config.grafana.enable ./dashboard.json;
     })
 
-    (lib.mkIf cfg.backup.enable {
+    (lib.mkIf (cfg.enable && cfg.backup.enable) {
       boot.supportedFilesystems = [ "nfs" ];
       fileSystems.${cfg.backup.mountPoint} = {
         device = "${cfg.backup.nfsServer}:${cfg.backup.nfsExport}";
