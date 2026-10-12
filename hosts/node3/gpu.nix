@@ -13,4 +13,7 @@
     modesetting.enable = true;
     nvidiaSettings = false;
   };
+
+  # Provides Docker CDI devices such as nvidia.com/gpu=0 for Immich ML.
+  hardware.nvidia-container-toolkit.enable = true;
 }
