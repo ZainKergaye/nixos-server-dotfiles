@@ -142,6 +142,23 @@ in
           message = "netprobe.grafana.enable requires grafana.enable";
         }
       ];
+
+      # Grafana otherwise assigns the default Prometheus datasource a random
+      # UID.  Netprobe's upstream dashboard has a fixed UID, so pin
+      # Prometheus here as well to prevent it from taking Netprobe's UID.
+      services.grafana.provision.datasources.settings.datasources = lib.mkForce (
+        [
+          {
+            name = "Prometheus";
+            uid = "Prometheus";
+            type = "prometheus";
+            url = "http://localhost:9090";
+            isDefault = true;
+          }
+        ]
+        ++ config.grafana.datasources
+      );
+
       grafana.datasources = [
         {
           name = "Netprobe";
