@@ -21,6 +21,12 @@ in
       default = "10.100.0.0/24";
       description = "WireGuard client subnet allowed to reach Scrypted";
     };
+
+    allowWan = mkOption {
+      type = types.bool;
+      default = false;
+      description = "Allow Scrypted and its HomeKit accessory ports from the router's WAN side";
+    };
   };
 
   config = lib.mkIf cfg.enable {
@@ -53,11 +59,13 @@ in
     };
 
     # The host-networked HomeKit accessory uses mDNS and dynamic TCP/UDP ports.
-    # Restrict all of them to the physical LAN, rather than exposing a broad
-    # port range to any future WAN interface.
+    # When WAN access is enabled, the router remains the perimeter: it forwards
+    # only WAN traffic addressed to this host. This rule admits those forwarded
+    # packets after they arrive on Node 1's LAN interface.
     networking.firewall.extraCommands = lib.mkAfter ''
       iptables -A nixos-fw -s ${cfg.lanCidr} -j ACCEPT
       iptables -A nixos-fw -s ${cfg.wireGuardCidr} -j ACCEPT
+      ${lib.optionalString cfg.allowWan "iptables -A nixos-fw -j ACCEPT"}
     '';
   };
 }

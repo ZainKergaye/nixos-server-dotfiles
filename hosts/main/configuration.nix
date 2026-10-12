@@ -80,6 +80,23 @@
     LANif = "enp2s0";
   };
 
+  # Make Scrypted's dynamic HomeKit accessory ports reachable from the home
+  # network on the WAN side. Home-network clients need a route for
+  # 10.10.10.0/24 via main's WAN address; see docs/lan-services.md.
+  networking.nat.extraCommands = ''
+    iptables -w -t filter -A nixos-filter-forward -i ${config.router.WANif} -o ${config.router.LANif} -d 10.10.10.11 -j ACCEPT
+  '';
+
+  # HomeKit discovers the host-networked Scrypted accessory using mDNS. mDNS
+  # is link-local, so reflect it explicitly between the home (WAN) and server
+  # LAN networks; do not reflect it to any other interface.
+  services.avahi = {
+    enable = true;
+    reflector = true;
+    allowInterfaces = [ config.router.WANif config.router.LANif ];
+    openFirewall = true;
+  };
+
   # `nix run .#main` gets a NAT-backed WAN and a socket-backed LAN.  This
   # variant affects only the test VM; the real machine continues to use the
   # interface names above.

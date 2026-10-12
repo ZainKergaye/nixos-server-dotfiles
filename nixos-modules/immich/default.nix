@@ -122,7 +122,6 @@ in
         "render"
         "video"
         "immich"
-        "postgres"
       ];
 
       # Run ML separately because GPU0 is Pascal (compute capability 6.1).
