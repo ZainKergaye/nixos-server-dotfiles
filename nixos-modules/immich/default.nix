@@ -53,7 +53,15 @@ in
       };
 
       borgEncryptionMode = mkOption {
-        type = types.enum [ "repokey" "keyfile" "repokey-blake2" "keyfile-blake2" "authenticated" "authenticated-blake2" "none" ];
+        type = types.enum [
+          "repokey"
+          "keyfile"
+          "repokey-blake2"
+          "keyfile-blake2"
+          "authenticated"
+          "authenticated-blake2"
+          "none"
+        ];
         default = "none";
         description = "Borg repository encryption mode; use a pass command for encrypted modes";
       };
@@ -110,7 +118,11 @@ in
 
       # The services are sandboxed with PrivateUsers, so grant their account
       # the NVIDIA device groups explicitly for CUDA inference and NVENC.
-      users.users.immich.extraGroups = [ "render" "video" ];
+      users.users.immich.extraGroups = [
+        "render"
+        "video"
+        "immich"
+      ];
 
       # Run ML separately because GPU0 is Pascal (compute capability 6.1).
       # CDI exposes only that GPU to the official CUDA image; GPU1 remains
@@ -120,7 +132,10 @@ in
         containers.immich-machine-learning = {
           image = "ghcr.io/immich-app/immich-machine-learning:v${pkgs.immich.version}-cuda";
           autoStart = true;
-          extraOptions = [ "--network=host" "--device=nvidia.com/gpu=0" ];
+          extraOptions = [
+            "--network=host"
+            "--device=nvidia.com/gpu=0"
+          ];
           environment = {
             IMMICH_HOST = "127.0.0.1";
             IMMICH_PORT = "3003";
@@ -134,6 +149,76 @@ in
         after = [ "docker-immich-machine-learning.service" ];
         wants = [ "docker-immich-machine-learning.service" ];
         environment.IMMICH_MACHINE_LEARNING_URL = lib.mkForce "http://127.0.0.1:3003";
+      };
+      # Used to solve dumb permission issues
+      systemd.tmpfiles.settings.immich = {
+        "/var/lib/immich".d = {
+          user = "immich";
+          group = "immich";
+          mode = "0700";
+        };
+        "/var/lib/immich/thumbs".d = {
+          user = "immich";
+          group = "immich";
+          mode = "0700";
+        };
+        "/var/lib/immich/upload".d = {
+          user = "immich";
+          group = "immich";
+          mode = "0700";
+        };
+        "/var/lib/immich/encoded-video".d = {
+          user = "immich";
+          group = "immich";
+          mode = "0700";
+        };
+        "/var/lib/immich/profile".d = {
+          user = "immich";
+          group = "immich";
+          mode = "0700";
+        };
+        "/var/lib/immich/backups".d = {
+          user = "immich";
+          group = "immich";
+          mode = "0700";
+        };
+        "/var/lib/immich/library".d = {
+          user = "immich";
+          group = "immich";
+          mode = "0700";
+        };
+
+        # Create marker files
+        "/var/lib/immich/thumbs/.immich".f = {
+          user = "immich";
+          group = "immich";
+          mode = "0644";
+        };
+        "/var/lib/immich/upload/.immich".f = {
+          user = "immich";
+          group = "immich";
+          mode = "0644";
+        };
+        "/var/lib/immich/encoded-video/.immich".f = {
+          user = "immich";
+          group = "immich";
+          mode = "0644";
+        };
+        "/var/lib/immich/profile/.immich".f = {
+          user = "immich";
+          group = "immich";
+          mode = "0644";
+        };
+        "/var/lib/immich/backups/.immich".f = {
+          user = "immich";
+          group = "immich";
+          mode = "0644";
+        };
+        "/var/lib/immich/library/.immich".f = {
+          user = "immich";
+          group = "immich";
+          mode = "0644";
+        };
       };
     })
 
@@ -179,7 +264,12 @@ in
       fileSystems.${cfg.backup.mountPoint} = {
         device = "${cfg.backup.nfsServer}:${cfg.backup.nfsExport}";
         fsType = "nfs4";
-        options = [ "_netdev" "noatime" "x-systemd.automount" "x-systemd.idle-timeout=300" ];
+        options = [
+          "_netdev"
+          "noatime"
+          "x-systemd.automount"
+          "x-systemd.idle-timeout=300"
+        ];
       };
 
       # Materialize the Borg repository directory on the NAS at boot.  The
