@@ -255,8 +255,6 @@ in
           ];
         }
       ];
-
-      grafana.dashboards."immich.json" = lib.mkIf config.grafana.enable ./dashboard.json;
     })
 
     (lib.mkIf (cfg.enable && cfg.backup.enable) {

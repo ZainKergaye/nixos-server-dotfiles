@@ -184,6 +184,12 @@
       extraFlags = [ "--collector.textfile.directory=/var/lib/node_exporter/textfile" ];
     };
 
+    # Rules are evaluated by the central Prometheus instance. They surface
+    # actionable router/IDS failures and detections; Alertmanager delivery is
+    # configured separately so credentials and notification destinations never
+    # need to be stored in this module.
+    services.prometheus.ruleFiles = lib.mkIf config.router.ids.enable [ ./alerts.yml ];
+
     # Store structured EVE events locally without exposing a log database on
     # the network.  Vector tails the JSON event stream and Loki retains it for
     # dashboard exploration and alert triage.

@@ -2,6 +2,7 @@
   config,
   lib,
   inputs,
+  pkgs,
   ...
 }:
 let
@@ -14,6 +15,12 @@ let
     "netprobe-prometheus"
   ];
   netprobeSource = inputs.netprobe;
+  netprobeDashboard = builtins.fromJSON (
+    builtins.readFile (netprobeSource + "/config/grafana/dashboards/netprobe.json")
+  );
+  taggedNetprobeDashboard = netprobeDashboard // {
+    tags = lib.unique ((netprobeDashboard.tags or [ ]) ++ [ "netprobe" "network" "internet" ]);
+  };
   networkOptions = aliases: [
     "--network=netprobe"
     # Netprobe intentionally queries public resolvers as part of its internet
@@ -65,7 +72,14 @@ in
         netprobe-speedtest = {
           image = "plaintextpackets/netprobe:latest";
           autoStart = true;
-          environment.MODULE = "SPEEDTEST";
+          environment = {
+            MODULE = "SPEEDTEST";
+            # Netprobe recommends a 15-minute-or-longer cadence to avoid
+            # speedtest.net throttling; its upstream prime-number default
+            # spreads the test away from other scheduled work.
+            SPEEDTEST_ENABLED = "True";
+            SPEEDTEST_INTERVAL = "937";
+          };
           volumes = [
             "${netprobeSource}:/netprobe_lite:ro"
             "netprobe-logs:/netprobe_lite/logs"
@@ -168,8 +182,11 @@ in
           url = "http://${cfg.metrics.target}:9090";
         }
       ];
-      grafana.dashboards."netprobe.json" =
-        netprobeSource + "/config/grafana/dashboards/netprobe.json";
+      # Preserve Netprobe's upstream dashboard while adding local tags for
+      # Grafana search and service-directory organization.
+      grafana.dashboards."netprobe.json" = pkgs.writeText "netprobe.json" (
+        builtins.toJSON taggedNetprobeDashboard
+      );
     })
   ];
 }

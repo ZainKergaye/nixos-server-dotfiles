@@ -81,11 +81,12 @@
     LANif = "enp2s0";
   };
 
-  # Make Scrypted's dynamic HomeKit accessory ports reachable from the home
-  # network on the WAN side. Home-network clients need a route for
-  # 10.10.10.0/24 via main's WAN address; see docs/lan-services.md.
+  # Make Scrypted's and Homebridge's dynamic HomeKit accessory ports reachable
+  # only from the trusted home network on the WAN side. Home-network clients
+  # need a route for 10.10.10.0/24 via main's WAN address; see
+  # docs/lan-services.md.
   networking.nat.extraCommands = ''
-    iptables -w -t filter -A nixos-filter-forward -i ${config.router.WANif} -o ${config.router.LANif} -d 10.10.10.11 -j ACCEPT
+    iptables -w -t filter -A nixos-filter-forward -i ${config.router.WANif} -o ${config.router.LANif} -s 10.0.0.0/24 -d 10.10.10.11 -j ACCEPT
   '';
 
   # HomeKit discovers the host-networked Scrypted accessory using mDNS. mDNS

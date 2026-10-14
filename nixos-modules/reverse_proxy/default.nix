@@ -1,10 +1,46 @@
 {
   lib,
   config,
+  pkgs,
   ...
 }:
 let
   cfg = config.reverse_proxy;
+  serviceDashboard = pkgs.writeText "lan-services-dashboard.json" (builtins.toJSON {
+    annotations.list = [ ];
+    editable = true;
+    links = lib.mapAttrsToList (hostname: _: {
+      title = hostname;
+      type = "link";
+      url = "http://${hostname}";
+      targetBlank = true;
+      includeTimeRange = false;
+      keepTime = false;
+    }) cfg.routes;
+    panels = [
+      {
+        type = "text";
+        title = "Available services";
+        gridPos = {
+          h = 10;
+          w = 24;
+          x = 0;
+          y = 0;
+        };
+        options = {
+          mode = "markdown";
+          content = builtins.concatStringsSep "\n" (
+            lib.mapAttrsToList (hostname: _: "- [${hostname}](http://${hostname})") cfg.routes
+          );
+        };
+      }
+    ];
+    schemaVersion = 39;
+    tags = [ "router" "services" ];
+    title = "LAN Services";
+    uid = "lan-services";
+    version = 1;
+  });
 in
 {
   options.reverse_proxy = with lib; {
@@ -47,5 +83,9 @@ in
     networking.firewall.extraCommands = lib.mkAfter ''
       iptables -A nixos-fw -p tcp --dport 80 -s ${config.router.LANipADDRbase}/${toString config.router.LANipNetmask} -j ACCEPT
     '';
+
+    # This directory is derived from routes, so adding a reverse-proxied
+    # service also adds a Grafana link without a second manual edit.
+    grafana.dashboards."lan-services.json" = serviceDashboard;
   };
 }

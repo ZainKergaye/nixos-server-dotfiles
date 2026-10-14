@@ -1,0 +1,38 @@
+groups:
+  - name: router-security
+    rules:
+      - alert: SuricataServiceDown
+        expr: node_systemd_unit_state{host="main",name="suricata.service",state="active"} != 1
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: Suricata is not running on the router
+          description: The router has not reported an active Suricata service for five minutes.
+
+      - alert: SuricataTelemetryStale
+        expr: time() - max(suricata_eve_stats_last_update_seconds{host="main"}) > 180
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: Suricata telemetry is stale
+          description: No fresh Suricata EVE statistics have been published for more than three minutes.
+
+      - alert: SuricataCaptureDrops
+        expr: increase(suricata_eve_capture_drops_total{host="main"}[5m]) > 0
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: Suricata is dropping captured packets
+          description: Suricata dropped packets while inspecting WAN traffic in the last five minutes.
+
+      - alert: SuricataAlertDetected
+        expr: increase(suricata_eve_alerts_total{host="main"}[5m]) > 0
+        for: 1m
+        labels:
+          severity: warning
+        annotations:
+          summary: Suricata detected suspicious network activity
+          description: Suricata raised one or more IDS alerts in the last five minutes; inspect the Suricata Events Grafana dashboard.

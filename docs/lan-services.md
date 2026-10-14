@@ -53,10 +53,10 @@ automatically on `main`.
 also available at `https://10.10.10.11:10443` with a self-signed certificate.
 Scrypted is intentionally reachable without its own login. It is available
 from `10.10.10.0/24`, connected WireGuard clients (`10.100.0.0/24`), and the
-trusted home network connected to `main`'s WAN interface. `main` forwards only
-WAN traffic addressed to Node 1 and reflects mDNS between its WAN and server
-LAN interfaces, which permits HomeKit discovery and its dynamic accessory
-ports without opening other LAN hosts to the WAN.
+trusted home network (`10.0.0.0/24`) connected to `main`'s WAN interface.
+`main` forwards only that network's traffic addressed to Node 1 and reflects
+mDNS between its WAN and server LAN interfaces, which permits HomeKit discovery
+and its dynamic accessory ports without opening other LAN hosts to the WAN.
 
 For home-network devices to reach the advertised `10.10.10.11` address, the
 upstream home router must have a static route for `10.10.10.0/24` via `main`'s
