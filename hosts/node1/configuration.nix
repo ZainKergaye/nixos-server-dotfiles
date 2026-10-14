@@ -12,6 +12,12 @@
     # port-only rule would not be sufficient.
     allowWan = true;
   };
+  homebridge = {
+    enable = true;
+    # Share Scrypted's WAN policy: main accepts only WAN -> Node 1 traffic,
+    # while this host permits HomeKit's dynamic ports after forwarding.
+    allowWan = true;
+  };
   netprobe.enable = true;
 
   hardware.cpu.intel.updateMicrocode = true;

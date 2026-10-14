@@ -83,6 +83,20 @@ The Lorex RTSP IP/URL is deliberately not committed here: it is camera-specific
 and commonly embeds credentials. Keep it in Scrypted's local configuration
 rather than Git.
 
+## Homebridge
+
+`node1` also runs Homebridge. Its management UI is available at
+`http://homebridge.s` from the server LAN and directly at
+`http://10.10.10.11:8581` from the LAN, WireGuard, or trusted home network on
+the WAN side. Its HomeKit mDNS and dynamic accessory ports follow the exact
+same policy as Scrypted: `main` forwards only WAN traffic destined for Node 1
+and reflects mDNS between the WAN and server LAN. The upstream static route
+for `10.10.10.0/24` described above is therefore required here too.
+
+Homebridge stores its UI configuration, HomeKit pairings, and installed plugins
+in `/var/lib/homebridge`. Install and configure plugins through the Homebridge
+UI; this state remains available across NixOS rebuilds.
+
 ## Immich
 
 `node1` runs authenticated Immich at `http://immich.home` on the LAN and

@@ -55,7 +55,7 @@ using it: there is no interactive confirmation.
 
 - [x] immich
 - [ ] jellyfin
-- [ ] homebridge
+- [x] homebridge
 - [ ] email server
 - [x] security camera
 - [x] ups

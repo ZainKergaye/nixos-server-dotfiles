@@ -4,6 +4,7 @@
     ./comin
     ./coding-agent
     ./grafana
+    ./homebridge
     ./immich
     ./lan-node
     ./netprobe

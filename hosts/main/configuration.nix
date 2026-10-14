@@ -65,6 +65,7 @@
       # Caddy proxies it to the node and port shown here.
       "immich.s" = "10.10.10.15:2283";
       "scrypted.s" = "10.10.10.11:11080";
+      "homebridge.s" = "10.10.10.11:8581";
       "ai.s" = "10.10.10.15:8081";
       "grafana.s" = "127.0.0.1:3000";
       "blocky.s" = "127.0.0.1:4000"; # For blocking button on grafana dashboard
