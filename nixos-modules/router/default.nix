@@ -190,6 +190,60 @@
     # need to be stored in this module.
     services.prometheus.ruleFiles = lib.mkIf config.router.ids.enable [ ./alerts.yml ];
 
+    # Keep the alert path on the VPN: the phone uses the stable WireGuard
+    # address, so ntfy need not be exposed on the LAN or public WAN. The
+    # upstream relay supplies immediate iOS notifications; alert contents are
+    # fetched directly from this host through WireGuard.
+    services.ntfy-sh = {
+      enable = true;
+      settings = {
+        listen-http = "0.0.0.0:2586";
+        base-url = "http://10.100.0.1:2586";
+        upstream-base-url = "https://ntfy.sh";
+      };
+    };
+
+    services.prometheus = {
+      alertmanagers = [
+        {
+          static_configs = [ { targets = [ "127.0.0.1:9093" ]; } ];
+        }
+      ];
+      alertmanager = {
+        enable = true;
+        listenAddress = "127.0.0.1";
+        configuration = {
+          route = {
+            receiver = "ntfy";
+            group_by = [ "alertname" "host" ];
+            group_wait = "30s";
+            group_interval = "5m";
+            repeat_interval = "4h";
+          };
+          receivers = [
+            {
+              name = "ntfy";
+              webhook_configs = [
+                {
+                  url = "http://127.0.0.1:8000";
+                  send_resolved = true;
+                }
+              ];
+            }
+          ];
+        };
+      };
+      alertmanager-ntfy = {
+        enable = true;
+        settings.ntfy = {
+          baseurl = "http://127.0.0.1:2586";
+          notification.topic = "router-alerts";
+        };
+      };
+    };
+
+    systemd.services.alertmanager-ntfy.after = [ "ntfy-sh.service" ];
+
     # Store structured EVE events locally without exposing a log database on
     # the network.  Vector tails the JSON event stream and Loki retains it for
     # dashboard exploration and alert triage.

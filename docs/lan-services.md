@@ -83,6 +83,15 @@ The Lorex RTSP IP/URL is deliberately not committed here: it is camera-specific
 and commonly embeds credentials. Keep it in Scrypted's local configuration
 rather than Git.
 
+## Router alerts
+
+`main` sends router and Suricata alerts through its self-hosted ntfy service.
+With WireGuard connected, subscribe to the `router-alerts` topic at
+`http://10.100.0.1:2586` in the ntfy mobile app. The server is reachable only
+through the authenticated WireGuard interface; ntfy forwards a poll request to
+its upstream relay so iOS receives prompt notifications, then the phone fetches
+the alert details through the VPN.
+
 ## Homebridge
 
 `node1` also runs Homebridge. Its management UI is available at

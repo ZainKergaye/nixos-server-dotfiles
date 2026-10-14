@@ -1,6 +1,7 @@
 {
   config,
   lib,
+  pkgs,
   ...
 }:
 let
@@ -37,6 +38,12 @@ in
       enable = true;
       openFirewall = false;
     };
+
+    # Some Homebridge plugins, including Python-backed Kasa integrations,
+    # execute Python helpers from the Homebridge service environment.
+    systemd.services.homebridge.path = lib.mkAfter [
+      (pkgs.python3.withPackages (pythonPackages: [ pythonPackages.python-kasa ]))
+    ];
 
     # HomeKit pairing and accessory communication use mDNS and dynamic
     # TCP/UDP ports. When WAN access is enabled, main remains the perimeter:
