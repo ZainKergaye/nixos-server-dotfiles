@@ -72,9 +72,6 @@
       "nas.s" = "10.10.10.39:8080";
     };
   };
-  # Main is the central Prometheus/Grafana host. It monitors Immich on node3,
-  # but does not run Immich, PostgreSQL, Borg, or the NFS backup mount.
-  immich.metrics.enable = true;
   router = {
     enable = true;
     WANif = "eno1";

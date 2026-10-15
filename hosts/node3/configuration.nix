@@ -12,10 +12,7 @@
   };
 
   codingAgent.enable = true;
-  immich = {
-    enable = true;
-    metrics.enable = true;
-  };
+  immich.enable = true;
 
   boot.initrd.availableKernelModules = [
     "xhci_pci"

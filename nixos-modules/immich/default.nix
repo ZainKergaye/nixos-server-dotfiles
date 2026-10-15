@@ -73,15 +73,6 @@ in
       };
     };
 
-    metrics.enable = mkEnableOption "Immich Prometheus metrics" // {
-      default = false;
-    };
-
-    metrics.target = mkOption {
-      type = types.str;
-      default = "10.10.10.15";
-      description = "Address of the Immich host scraped by the central Prometheus server";
-    };
   };
 
   config = lib.mkMerge [
@@ -106,8 +97,6 @@ in
         environment = {
           IMMICH_LOG_LEVEL = "warn";
           IMMICH_TELEMETRY_INCLUDE = "all";
-          IMMICH_API_METRICS_PORT = "8081";
-          IMMICH_MICROSERVICES_METRICS_PORT = "8082";
         };
       };
 
@@ -220,41 +209,6 @@ in
           mode = "0644";
         };
       };
-    })
-
-    (lib.mkIf (cfg.enable && cfg.metrics.enable) {
-      # Immich provides a separate endpoint for its API and microservices.
-      # Prometheus runs only on main, so neither endpoint is LAN-public.
-      networking.firewall.extraCommands = lib.mkAfter ''
-        iptables -A nixos-fw -p tcp --dport 8081 -s ${config.prometheus.collectorAddress} -j ACCEPT
-        iptables -A nixos-fw -p tcp --dport 8082 -s ${config.prometheus.collectorAddress} -j ACCEPT
-      '';
-    })
-
-    # The central collector is configured on main, while Immich itself runs
-    # on node3.  Keep the target and its scrape jobs with the service they
-    # monitor rather than making the generic Prometheus module know about it.
-    (lib.mkIf (cfg.metrics.enable && config.prometheus.server.enable) {
-      services.prometheus.scrapeConfigs = [
-        {
-          job_name = "immich-api";
-          static_configs = [
-            {
-              targets = [ "${cfg.metrics.target}:8081" ];
-              labels.host = "node3";
-            }
-          ];
-        }
-        {
-          job_name = "immich-microservices";
-          static_configs = [
-            {
-              targets = [ "${cfg.metrics.target}:8082" ];
-              labels.host = "node3";
-            }
-          ];
-        }
-      ];
     })
 
     (lib.mkIf (cfg.enable && cfg.backup.enable) {
