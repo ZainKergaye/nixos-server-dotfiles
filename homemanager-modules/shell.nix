@@ -7,12 +7,11 @@
   ...
 }:
 let
-  dotfilesDir = "/home/${userName}/.dotfiles";
   myAliases = {
     la = "ls -la";
     upgrade = lib.getExe (
       pkgs.writeShellScriptBin "upgrade" ''
-        sudo nixos-rebuild switch --flake ${dotfilesDir}/.#${hostName}
+        sudo nixos-rebuild switch --flake github:zainkergaye/nixos-server-dotfiles#${hostName}
       ''
     );
     neofetch = "fastfetch";

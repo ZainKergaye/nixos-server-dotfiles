@@ -10,6 +10,7 @@
     ./programs.nix
     ./shell.nix
     ./tmux.nix
+    ./development.nix
   ];
   tmux-conf.enable = true;
   home.homeDirectory = "/home/${userName}";
