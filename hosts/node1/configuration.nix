@@ -6,7 +6,7 @@
   };
 
   scrypted = {
-    enable = true;
+    enable = false;
     # The router limits this to traffic entering its WAN interface and
     # addressed to Node 1. HomeKit needs dynamic accessory ports, so a
     # port-only rule would not be sufficient.
