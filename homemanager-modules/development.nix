@@ -6,12 +6,12 @@
   ...
 }:
 lib.mkIf (hostName == "node4") {
+  home.packages = with pkgs; [
+    gnupg
+    pinentry-tty
+  ];
   programs = {
     zsh.shellAliases.g = lib.getExe' pkgs.git "git";
-    home.packages = with pkgs; [
-      gnupg
-      pinentry-tty
-    ];
     direnv = {
       enable = true;
       enableZshIntegration = true;
