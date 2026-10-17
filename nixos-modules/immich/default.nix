@@ -72,7 +72,6 @@ in
         description = "Command that prints the Borg passphrase without storing it in the Nix store";
       };
     };
-
   };
 
   config = lib.mkMerge [
@@ -184,6 +183,11 @@ in
           mode = "0644";
         };
         "/var/lib/immich/upload/.immich".f = {
+          user = "immich";
+          group = "immich";
+          mode = "0644";
+        };
+        "/var/lib/immich/upload/*".f = {
           user = "immich";
           group = "immich";
           mode = "0644";
