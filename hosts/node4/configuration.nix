@@ -5,6 +5,12 @@
   };
   imports = [ ./disk.nix ];
 
+  services.pcscd.enable = true;
+  programs.gnupg.agent = {
+    enable = true;
+    enableSSHSupport = true;
+  };
+
   hardware.cpu.intel.updateMicrocode = true;
   boot.loader = {
     timeout = 4;
