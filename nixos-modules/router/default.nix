@@ -4,6 +4,14 @@
   pkgs,
   ...
 }:
+let
+  routerDashboard = pkgs.writeText "router.json" (
+    lib.replaceStrings
+      [ "@WAN_INTERFACE@" "@LAN_INTERFACE@" ]
+      [ config.router.WANif config.router.LANif ]
+      (builtins.readFile ./dashboard.json)
+  );
+in
 {
   imports = [ ./firewall.nix ];
 
@@ -398,7 +406,7 @@
       mapping = config.router.lanHosts;
     };
 
-    grafana.dashboards."router.json" = ./dashboard.json;
+    grafana.dashboards."router.json" = routerDashboard;
     grafana.dashboards."suricata-events.json" = ./suricata-events-dashboard.json;
   };
 }

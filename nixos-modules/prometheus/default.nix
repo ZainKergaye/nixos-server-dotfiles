@@ -8,7 +8,9 @@ let
   cfg = config.prometheus;
   nodeTargets = lib.mapAttrsToList (name: address: {
     targets = [ "${address}:9100" ];
-    labels.host = lib.removeSuffix ".home" name;
+    # LAN host aliases use the `.s` suffix (for example `main.s`), while
+    # dashboards and service metrics consistently use the bare hostname.
+    labels.host = lib.removeSuffix ".s" name;
   }) config.router.lanHosts;
 in
 {

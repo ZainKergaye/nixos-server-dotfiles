@@ -4366,8 +4366,9 @@
     "list": [
       {
         "current": {
-          "text": "Default",
-          "value": "default"
+          "selected": true,
+          "text": "Prometheus",
+          "value": "Prometheus"
         },
         "label": "datasource",
         "name": "DS_PROMETHEUS",

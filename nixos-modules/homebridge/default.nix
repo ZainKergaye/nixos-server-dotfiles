@@ -41,8 +41,11 @@ in
 
     # Some Homebridge plugins, including Python-backed Kasa integrations,
     # execute Python helpers from the Homebridge service environment.
+    # `python3` currently resolves to Python 3.14 in nixpkgs, but
+    # homebridge-kasa-python supports only Python 3.11 through 3.13. Keep the
+    # plugin's helper and the Kasa dependency on the supported 3.13 runtime.
     systemd.services.homebridge.path = lib.mkAfter [
-      (pkgs.python3.withPackages (pythonPackages: [ pythonPackages.python-kasa ]))
+      (pkgs.python313.withPackages (pythonPackages: [ pythonPackages.python-kasa ]))
     ];
 
     # HomeKit pairing and accessory communication use mDNS and dynamic

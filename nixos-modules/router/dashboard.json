@@ -3,95 +3,162 @@
   "title": "Router Overview",
   "tags": ["router", "network", "prometheus"],
   "timezone": "browser",
-  "schemaVersion": 39,
-  "version": 1,
+  "schemaVersion": 41,
+  "version": 2,
   "refresh": "30s",
+  "time": { "from": "now-24h", "to": "now" },
   "panels": [
     {
       "id": 1,
-      "title": "LAN / WAN traffic",
+      "title": "WAN traffic",
+      "description": "Internet ingress (download) and egress (upload) on @WAN_INTERFACE@.",
       "type": "timeseries",
+      "datasource": { "type": "prometheus", "uid": "Prometheus" },
       "targets": [
-        { "expr": "rate(node_network_receive_bytes_total{host=\"main\",device!~\"lo\"}[5m])", "legendFormat": "{{device}} receive", "refId": "A" },
-        { "expr": "rate(node_network_transmit_bytes_total{host=\"main\",device!~\"lo\"}[5m])", "legendFormat": "{{device}} transmit", "refId": "B" }
+        { "expr": "rate(node_network_receive_bytes_total{host=\"main\",device=\"@WAN_INTERFACE@\"}[$__rate_interval])", "legendFormat": "download", "refId": "A" },
+        { "expr": "rate(node_network_transmit_bytes_total{host=\"main\",device=\"@WAN_INTERFACE@\"}[$__rate_interval])", "legendFormat": "upload", "refId": "B" }
       ],
-      "fieldConfig": { "defaults": { "unit": "Bps" }, "overrides": [] },
+      "fieldConfig": { "defaults": { "unit": "Bps", "color": { "mode": "palette-classic" } }, "overrides": [] },
+      "options": { "legend": { "displayMode": "table", "placement": "bottom", "showLegend": true }, "tooltip": { "mode": "multi" } },
       "gridPos": { "h": 8, "w": 12, "x": 0, "y": 0 }
     },
     {
       "id": 2,
-      "title": "Interface errors and drops",
+      "title": "LAN traffic",
+      "description": "Traffic between the router and the server LAN on @LAN_INTERFACE@.",
       "type": "timeseries",
+      "datasource": { "type": "prometheus", "uid": "Prometheus" },
       "targets": [
-        { "expr": "rate(node_network_receive_errs_total{host=\"main\",device!~\"lo\"}[5m]) + rate(node_network_receive_drop_total{host=\"main\",device!~\"lo\"}[5m])", "legendFormat": "{{device}} receive", "refId": "A" },
-        { "expr": "rate(node_network_transmit_errs_total{host=\"main\",device!~\"lo\"}[5m]) + rate(node_network_transmit_drop_total{host=\"main\",device!~\"lo\"}[5m])", "legendFormat": "{{device}} transmit", "refId": "B" }
+        { "expr": "rate(node_network_receive_bytes_total{host=\"main\",device=\"@LAN_INTERFACE@\"}[$__rate_interval])", "legendFormat": "from LAN", "refId": "A" },
+        { "expr": "rate(node_network_transmit_bytes_total{host=\"main\",device=\"@LAN_INTERFACE@\"}[$__rate_interval])", "legendFormat": "to LAN", "refId": "B" }
       ],
-      "fieldConfig": { "defaults": { "unit": "ops" }, "overrides": [] },
+      "fieldConfig": { "defaults": { "unit": "Bps", "color": { "mode": "palette-classic" } }, "overrides": [] },
+      "options": { "legend": { "displayMode": "table", "placement": "bottom", "showLegend": true }, "tooltip": { "mode": "multi" } },
       "gridPos": { "h": 8, "w": 12, "x": 12, "y": 0 }
     },
     {
       "id": 3,
-      "title": "Conntrack table use",
-      "type": "gauge",
-      "targets": [{ "expr": "100 * node_nf_conntrack_entries{host=\"main\"} / node_nf_conntrack_entries_limit{host=\"main\"}", "refId": "A" }],
-      "fieldConfig": { "defaults": { "unit": "percent", "min": 0, "max": 100, "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }, { "color": "orange", "value": 70 }, { "color": "red", "value": 90 }] } }, "overrides": [] },
-      "gridPos": { "h": 8, "w": 6, "x": 0, "y": 8 }
+      "title": "WAN and LAN errors / drops",
+      "description": "Any sustained non-zero rate warrants investigation: physical link, NIC driver, queue pressure, or upstream issue.",
+      "type": "timeseries",
+      "datasource": { "type": "prometheus", "uid": "Prometheus" },
+      "targets": [
+        { "expr": "rate(node_network_receive_errs_total{host=\"main\",device=~\"@WAN_INTERFACE@|@LAN_INTERFACE@\"}[$__rate_interval])", "legendFormat": "{{device}} RX errors", "refId": "A" },
+        { "expr": "rate(node_network_transmit_errs_total{host=\"main\",device=~\"@WAN_INTERFACE@|@LAN_INTERFACE@\"}[$__rate_interval])", "legendFormat": "{{device}} TX errors", "refId": "B" },
+        { "expr": "rate(node_network_receive_drop_total{host=\"main\",device=~\"@WAN_INTERFACE@|@LAN_INTERFACE@\"}[$__rate_interval])", "legendFormat": "{{device}} RX drops", "refId": "C" },
+        { "expr": "rate(node_network_transmit_drop_total{host=\"main\",device=~\"@WAN_INTERFACE@|@LAN_INTERFACE@\"}[$__rate_interval])", "legendFormat": "{{device}} TX drops", "refId": "D" }
+      ],
+      "fieldConfig": { "defaults": { "unit": "ops", "decimals": 3, "color": { "mode": "palette-classic" } }, "overrides": [] },
+      "options": { "legend": { "displayMode": "table", "placement": "bottom", "showLegend": true }, "tooltip": { "mode": "multi" } },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 8 }
     },
     {
       "id": 4,
-      "title": "Router uptime",
-      "type": "stat",
-      "targets": [{ "expr": "node_time_seconds{host=\"main\"} - node_boot_time_seconds{host=\"main\"}", "refId": "A" }],
-      "fieldConfig": { "defaults": { "unit": "s", "decimals": 0 }, "overrides": [] },
-      "gridPos": { "h": 8, "w": 6, "x": 6, "y": 8 }
+      "title": "Conntrack table use",
+      "type": "gauge",
+      "datasource": { "type": "prometheus", "uid": "Prometheus" },
+      "targets": [{ "expr": "100 * node_nf_conntrack_entries{host=\"main\"} / node_nf_conntrack_entries_limit{host=\"main\"}", "refId": "A" }],
+      "fieldConfig": { "defaults": { "unit": "percent", "min": 0, "max": 100, "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }, { "color": "orange", "value": 70 }, { "color": "red", "value": 90 }] } }, "overrides": [] },
+      "options": { "orientation": "auto", "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false }, "showThresholdLabels": false, "showThresholdMarkers": true },
+      "gridPos": { "h": 8, "w": 4, "x": 12, "y": 8 }
     },
     {
       "id": 5,
-      "title": "Core router services",
+      "title": "Router uptime",
       "type": "stat",
-      "targets": [{ "expr": "node_systemd_unit_state{host=\"main\",name=~\"(blocky|dnsmasq|caddy|suricata|wireguard-wg0)\\.service\",state=\"active\"}", "legendFormat": "{{name}}", "refId": "A" }],
-      "fieldConfig": { "defaults": { "mappings": [{ "options": { "0": { "text": "inactive", "color": "red" }, "1": { "text": "active", "color": "green" } }, "type": "value" }] }, "overrides": [] },
-      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 8 }
+      "datasource": { "type": "prometheus", "uid": "Prometheus" },
+      "targets": [{ "expr": "time() - node_boot_time_seconds{host=\"main\"}", "refId": "A" }],
+      "fieldConfig": { "defaults": { "unit": "s", "decimals": 0 }, "overrides": [] },
+      "options": { "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false }, "orientation": "auto", "textMode": "auto", "wideLayout": true },
+      "gridPos": { "h": 8, "w": 4, "x": 16, "y": 8 }
     },
     {
       "id": 6,
-      "title": "Suricata stats freshness",
-      "type": "gauge",
-      "targets": [{ "expr": "time() - max(suricata_eve_stats_last_update_seconds{host=\"main\"})", "refId": "A" }],
-      "fieldConfig": { "defaults": { "unit": "s", "min": 0, "max": 180, "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }, { "color": "orange", "value": 90 }, { "color": "red", "value": 180 }] } }, "overrides": [] },
-      "gridPos": { "h": 8, "w": 4, "x": 0, "y": 16 }
+      "title": "Prometheus scrape health",
+      "type": "stat",
+      "datasource": { "type": "prometheus", "uid": "Prometheus" },
+      "targets": [{ "expr": "up{job=\"nodes\",host=\"main\"}", "refId": "A" }],
+      "fieldConfig": { "defaults": { "mappings": [{ "type": "value", "options": { "0": { "text": "down", "color": "red" }, "1": { "text": "up", "color": "green" } } }], "thresholds": { "mode": "absolute", "steps": [{ "color": "red", "value": null }, { "color": "green", "value": 1 }] } }, "overrides": [] },
+      "options": { "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false }, "orientation": "auto", "textMode": "auto", "wideLayout": true },
+      "gridPos": { "h": 8, "w": 4, "x": 20, "y": 8 }
     },
     {
       "id": 7,
-      "title": "Suricata alerts",
-      "type": "timeseries",
-      "targets": [
-        { "expr": "rate(suricata_eve_alerts_total{host=\"main\"}[5m])", "legendFormat": "alerts", "refId": "A" },
-        { "expr": "rate(suricata_eve_alert_queue_overflow_total{host=\"main\"}[5m])", "legendFormat": "queue overflow", "refId": "B" },
-        { "expr": "rate(suricata_eve_alerts_suppressed_total{host=\"main\"}[5m])", "legendFormat": "suppressed", "refId": "C" }
-      ],
-      "fieldConfig": { "defaults": { "unit": "ops" }, "overrides": [] },
-      "gridPos": { "h": 8, "w": 8, "x": 4, "y": 16 }
+      "title": "Core router services",
+      "description": "DNS/DHCP, reverse proxy, VPN, IDS, monitoring, and the Grafana UI.",
+      "type": "stat",
+      "datasource": { "type": "prometheus", "uid": "Prometheus" },
+      "targets": [{ "expr": "node_systemd_unit_state{host=\"main\",name=~\"(blocky|dnsmasq|caddy|wireguard-wg0|suricata|prometheus|grafana)\\\\.service\",state=\"active\"}", "legendFormat": "{{name}}", "refId": "A" }],
+      "fieldConfig": { "defaults": { "mappings": [{ "type": "value", "options": { "0": { "text": "inactive", "color": "red" }, "1": { "text": "active", "color": "green" } } }] }, "overrides": [] },
+      "options": { "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false }, "orientation": "auto", "textMode": "name", "wideLayout": false },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 16 }
     },
     {
       "id": 8,
-      "title": "Suricata capture and engine health",
+      "title": "CPU busy and load",
       "type": "timeseries",
+      "datasource": { "type": "prometheus", "uid": "Prometheus" },
       "targets": [
-        { "expr": "rate(suricata_eve_capture_packets_total{host=\"main\"}[5m])", "legendFormat": "packets", "refId": "A" },
-        { "expr": "rate(suricata_eve_capture_drops_total{host=\"main\"}[5m])", "legendFormat": "capture drops", "refId": "B" },
-        { "expr": "rate(suricata_eve_tcp_reassembly_gaps_total{host=\"main\"}[5m])", "legendFormat": "TCP reassembly gaps", "refId": "C" }
+        { "expr": "100 * (1 - avg by (host) (rate(node_cpu_seconds_total{host=\"main\",mode=\"idle\"}[$__rate_interval]))))", "legendFormat": "CPU busy", "refId": "A" },
+        { "expr": "node_load1{host=\"main\"}", "legendFormat": "load 1m", "refId": "B" },
+        { "expr": "node_load5{host=\"main\"}", "legendFormat": "load 5m", "refId": "C" }
       ],
-      "fieldConfig": { "defaults": { "unit": "ops" }, "overrides": [] },
-      "gridPos": { "h": 8, "w": 8, "x": 0, "y": 24 }
+      "fieldConfig": { "defaults": { "color": { "mode": "palette-classic" } }, "overrides": [{ "matcher": { "id": "byName", "options": "CPU busy" }, "properties": [{ "id": "unit", "value": "percent" }] }] },
+      "options": { "legend": { "displayMode": "table", "placement": "bottom", "showLegend": true }, "tooltip": { "mode": "multi" } },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 16 }
     },
     {
       "id": 9,
-      "title": "Suricata engine uptime",
-      "type": "stat",
-      "targets": [{ "expr": "suricata_eve_uptime_seconds{host=\"main\"}", "refId": "A" }],
-      "fieldConfig": { "defaults": { "unit": "s", "decimals": 0 }, "overrides": [] },
-      "gridPos": { "h": 8, "w": 4, "x": 8, "y": 24 }
+      "title": "Memory and root filesystem available",
+      "type": "timeseries",
+      "datasource": { "type": "prometheus", "uid": "Prometheus" },
+      "targets": [
+        { "expr": "100 * node_memory_MemAvailable_bytes{host=\"main\"} / node_memory_MemTotal_bytes{host=\"main\"}", "legendFormat": "memory available", "refId": "A" },
+        { "expr": "100 * node_filesystem_avail_bytes{host=\"main\",mountpoint=\"/\",fstype!~\"tmpfs|overlay\"} / node_filesystem_size_bytes{host=\"main\",mountpoint=\"/\",fstype!~\"tmpfs|overlay\"}", "legendFormat": "root available", "refId": "B" }
+      ],
+      "fieldConfig": { "defaults": { "unit": "percent", "min": 0, "max": 100, "color": { "mode": "palette-classic" } }, "overrides": [] },
+      "options": { "legend": { "displayMode": "table", "placement": "bottom", "showLegend": true }, "tooltip": { "mode": "multi" } },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 24 }
+    },
+    {
+      "id": 10,
+      "title": "TCP connections and retransmissions",
+      "type": "timeseries",
+      "datasource": { "type": "prometheus", "uid": "Prometheus" },
+      "targets": [
+        { "expr": "node_netstat_Tcp_CurrEstab{host=\"main\"}", "legendFormat": "established", "refId": "A" },
+        { "expr": "rate(node_netstat_Tcp_RetransSegs{host=\"main\"}[$__rate_interval])", "legendFormat": "retransmissions/s", "refId": "B" }
+      ],
+      "fieldConfig": { "defaults": { "color": { "mode": "palette-classic" } }, "overrides": [] },
+      "options": { "legend": { "displayMode": "table", "placement": "bottom", "showLegend": true }, "tooltip": { "mode": "multi" } },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 24 }
+    },
+    {
+      "id": 11,
+      "title": "DNS query rate and blocking",
+      "type": "timeseries",
+      "datasource": { "type": "prometheus", "uid": "Prometheus" },
+      "targets": [
+        { "expr": "sum(rate(blocky_query_total{host=\"main\"}[$__rate_interval]))", "legendFormat": "queries/s", "refId": "A" },
+        { "expr": "sum(rate(blocky_response_total{host=\"main\",response_type=~\"BLOCKED|REBIND\"}[$__rate_interval]))", "legendFormat": "blocked/s", "refId": "B" }
+      ],
+      "fieldConfig": { "defaults": { "unit": "ops", "color": { "mode": "palette-classic" } }, "overrides": [] },
+      "options": { "legend": { "displayMode": "table", "placement": "bottom", "showLegend": true }, "tooltip": { "mode": "multi" } },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 32 }
+    },
+    {
+      "id": 12,
+      "title": "IDS alerts and capture drops",
+      "type": "timeseries",
+      "datasource": { "type": "prometheus", "uid": "Prometheus" },
+      "targets": [
+        { "expr": "rate(suricata_eve_alerts_total{host=\"main\"}[$__rate_interval])", "legendFormat": "alerts/s", "refId": "A" },
+        { "expr": "rate(suricata_eve_capture_drops_total{host=\"main\"}[$__rate_interval])", "legendFormat": "capture drops/s", "refId": "B" },
+        { "expr": "rate(suricata_eve_tcp_reassembly_gaps_total{host=\"main\"}[$__rate_interval])", "legendFormat": "TCP reassembly gaps/s", "refId": "C" }
+      ],
+      "fieldConfig": { "defaults": { "unit": "ops", "decimals": 3, "color": { "mode": "palette-classic" } }, "overrides": [] },
+      "options": { "legend": { "displayMode": "table", "placement": "bottom", "showLegend": true }, "tooltip": { "mode": "multi" } },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 32 }
     }
   ]
 }
