@@ -57,7 +57,7 @@
       }
     ];
   };
-  #ups.server.enable = true;
+  ups.server.enable = true;
   reverse_proxy = {
     enable = true;
     routes = {
@@ -92,7 +92,10 @@
   services.avahi = {
     enable = true;
     reflector = true;
-    allowInterfaces = [ config.router.WANif config.router.LANif ];
+    allowInterfaces = [
+      config.router.WANif
+      config.router.LANif
+    ];
     openFirewall = true;
   };
 
