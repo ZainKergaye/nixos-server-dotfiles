@@ -188,9 +188,53 @@ in
     };
 
     services.prometheus.exporters.node = lib.mkIf config.router.ids.enable {
-      enabledCollectors = [ "textfile" ];
+      # `netstat` and `conntrack` expose TCP retransmissions and state-table
+      # pressure. Hardware collectors are no-ops on systems without sensors.
+      enabledCollectors = [
+        "textfile"
+        "netstat"
+        "conntrack"
+        "hwmon"
+        "thermal_zone"
+      ];
       extraFlags = [ "--collector.textfile.directory=/var/lib/node_exporter/textfile" ];
     };
+
+    # Probe two independent public resolvers from the router itself. This
+    # distinguishes a WAN outage from an internal DNS or client-side problem.
+    services.prometheus.exporters.blackbox = {
+      enable = true;
+      listenAddress = "127.0.0.1";
+      configFile = pkgs.writeText "router-blackbox.yaml" (builtins.toJSON {
+        modules.icmp = {
+          prober = "icmp";
+          timeout = "5s";
+          icmp.preferred_ip_protocol = "ip4";
+        };
+      });
+    };
+    services.prometheus.scrapeConfigs = [
+      {
+        job_name = "router-wan-icmp";
+        metrics_path = "/probe";
+        params.module = [ "icmp" ];
+        static_configs = [ { targets = [ "1.1.1.1" "9.9.9.9" ]; } ];
+        relabel_configs = [
+          {
+            source_labels = [ "__address__" ];
+            target_label = "__param_target";
+          }
+          {
+            source_labels = [ "__param_target" ];
+            target_label = "instance";
+          }
+          {
+            target_label = "__address__";
+            replacement = "127.0.0.1:9115";
+          }
+        ];
+      }
+    ];
 
     # Rules are evaluated by the central Prometheus instance. They surface
     # actionable router/IDS failures and detections; Alertmanager delivery is
@@ -345,6 +389,53 @@ in
       "d /var/lib/loki/rules 0750 loki loki -"
       "d /var/lib/loki/rules-tmp 0750 loki loki -"
     ];
+
+    # dnsmasq's lease file is the authoritative view of active DHCP clients.
+    # Firewall refusals are intentionally a short-window gauge: the default
+    # firewall logs only refused new TCP connections, avoiding log floods.
+    systemd.services.router-local-metrics = {
+      description = "Publish router DHCP and firewall metrics for Prometheus";
+      after = [ "dnsmasq.service" ];
+      serviceConfig.Type = "oneshot";
+      path = [ pkgs.coreutils pkgs.gawk pkgs.gnugrep pkgs.systemd ];
+      script = ''
+        set -euo pipefail
+        lease_file=/var/lib/dnsmasq/dnsmasq.leases
+        output=/var/lib/node_exporter/textfile/router-local.prom
+        now=$(date +%s)
+        total=0
+        active=0
+        if test -r "$lease_file"; then
+          total=$(awk 'NF >= 4 { count++ } END { print count + 0 }' "$lease_file")
+          active=$(awk -v now="$now" 'NF >= 4 && ($1 == 0 || $1 > now) { count++ } END { print count + 0 }' "$lease_file")
+        fi
+        refused=$(journalctl -k --since '2 minutes ago' -o cat 2>/dev/null | grep -ci 'refused connection' || true)
+        tmp=$(mktemp "''${output}.XXXXXX")
+        trap 'rm -f "$tmp"' EXIT
+        {
+          echo '# HELP router_dhcp_leases DHCP leases known by dnsmasq.'
+          echo '# TYPE router_dhcp_leases gauge'
+          echo "router_dhcp_leases{state=\"total\"} $total"
+          echo "router_dhcp_leases{state=\"active\"} $active"
+          echo '# HELP router_firewall_refused_connections_recent Refused new TCP connections logged in the last two minutes.'
+          echo '# TYPE router_firewall_refused_connections_recent gauge'
+          echo "router_firewall_refused_connections_recent $refused"
+          echo '# HELP router_local_metrics_last_update_seconds Unix timestamp of this collection.'
+          echo '# TYPE router_local_metrics_last_update_seconds gauge'
+          echo "router_local_metrics_last_update_seconds $now"
+        } > "$tmp"
+        chmod 0644 "$tmp"
+        mv "$tmp" "$output"
+      '';
+    };
+    systemd.timers.router-local-metrics = {
+      wantedBy = [ "timers.target" ];
+      timerConfig = {
+        OnBootSec = "2min";
+        OnUnitActiveSec = "1min";
+        Persistent = true;
+      };
+    };
 
     systemd.services.suricata-eve-metrics = lib.mkIf config.router.ids.enable {
       description = "Publish Suricata EVE statistics for Prometheus";

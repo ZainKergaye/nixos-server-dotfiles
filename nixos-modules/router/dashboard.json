@@ -159,6 +159,70 @@
       "fieldConfig": { "defaults": { "unit": "ops", "decimals": 3, "color": { "mode": "palette-classic" } }, "overrides": [] },
       "options": { "legend": { "displayMode": "table", "placement": "bottom", "showLegend": true }, "tooltip": { "mode": "multi" } },
       "gridPos": { "h": 8, "w": 12, "x": 12, "y": 32 }
+    },
+    {
+      "id": 13,
+      "title": "WAN reachability",
+      "description": "Independent ICMP probes from the router. Both targets failing indicates an upstream/WAN problem.",
+      "type": "stat",
+      "datasource": { "type": "prometheus", "uid": "Prometheus" },
+      "targets": [{ "expr": "probe_success{job=\"router-wan-icmp\"}", "legendFormat": "{{instance}}", "refId": "A" }],
+      "fieldConfig": { "defaults": { "mappings": [{ "type": "value", "options": { "0": { "text": "down", "color": "red" }, "1": { "text": "reachable", "color": "green" } } }] }, "overrides": [] },
+      "options": { "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false }, "orientation": "auto", "textMode": "name", "wideLayout": false },
+      "gridPos": { "h": 8, "w": 8, "x": 0, "y": 40 }
+    },
+    {
+      "id": 14,
+      "title": "WAN probe latency",
+      "type": "timeseries",
+      "datasource": { "type": "prometheus", "uid": "Prometheus" },
+      "targets": [{ "expr": "probe_duration_seconds{job=\"router-wan-icmp\"}", "legendFormat": "{{instance}}", "refId": "A" }],
+      "fieldConfig": { "defaults": { "unit": "s", "decimals": 3, "color": { "mode": "palette-classic" } }, "overrides": [] },
+      "options": { "legend": { "displayMode": "table", "placement": "bottom", "showLegend": true }, "tooltip": { "mode": "multi" } },
+      "gridPos": { "h": 8, "w": 8, "x": 8, "y": 40 }
+    },
+    {
+      "id": 15,
+      "title": "DHCP leases and refused connections",
+      "description": "Refusals count only new TCP connections rejected in the last two minutes.",
+      "type": "timeseries",
+      "datasource": { "type": "prometheus", "uid": "Prometheus" },
+      "targets": [
+        { "expr": "router_dhcp_leases{state=\"active\",host=\"main\"}", "legendFormat": "active DHCP leases", "refId": "A" },
+        { "expr": "router_dhcp_leases{state=\"total\",host=\"main\"}", "legendFormat": "known leases", "refId": "B" },
+        { "expr": "router_firewall_refused_connections_recent{host=\"main\"}", "legendFormat": "refused connections (2m)", "refId": "C" }
+      ],
+      "fieldConfig": { "defaults": { "decimals": 0, "color": { "mode": "palette-classic" } }, "overrides": [] },
+      "options": { "legend": { "displayMode": "table", "placement": "bottom", "showLegend": true }, "tooltip": { "mode": "multi" } },
+      "gridPos": { "h": 8, "w": 8, "x": 16, "y": 40 }
+    },
+    {
+      "id": 16,
+      "title": "Router temperatures",
+      "description": "Shown when the hardware exposes thermal or hwmon sensors.",
+      "type": "timeseries",
+      "datasource": { "type": "prometheus", "uid": "Prometheus" },
+      "targets": [
+        { "expr": "node_hwmon_temp_celsius{host=\"main\"}", "legendFormat": "{{chip}} {{sensor}}", "refId": "A" },
+        { "expr": "node_thermal_zone_temp{host=\"main\"} / 1000", "legendFormat": "{{type}}", "refId": "B" }
+      ],
+      "fieldConfig": { "defaults": { "unit": "celsius", "color": { "mode": "palette-classic" } }, "overrides": [] },
+      "options": { "legend": { "displayMode": "table", "placement": "bottom", "showLegend": true }, "tooltip": { "mode": "multi" } },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 48 }
+    },
+    {
+      "id": 17,
+      "title": "WireGuard peer health",
+      "type": "timeseries",
+      "datasource": { "type": "prometheus", "uid": "Prometheus" },
+      "targets": [
+        { "expr": "wireguard_latest_handshake_delay_seconds{interface=\"wg0\"}", "legendFormat": "handshake {{allowed_ips}}", "refId": "A" },
+        { "expr": "rate(wireguard_received_bytes_total{interface=\"wg0\"}[$__rate_interval])", "legendFormat": "RX {{allowed_ips}}", "refId": "B" },
+        { "expr": "rate(wireguard_sent_bytes_total{interface=\"wg0\"}[$__rate_interval])", "legendFormat": "TX {{allowed_ips}}", "refId": "C" }
+      ],
+      "fieldConfig": { "defaults": { "color": { "mode": "palette-classic" } }, "overrides": [{ "matcher": { "id": "byRegexp", "options": "^(RX|TX)" }, "properties": [{ "id": "unit", "value": "Bps" }] }, { "matcher": { "id": "byRegexp", "options": "^handshake" }, "properties": [{ "id": "unit", "value": "s" }] }] },
+      "options": { "legend": { "displayMode": "table", "placement": "bottom", "showLegend": true }, "tooltip": { "mode": "multi" } },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 48 }
     }
   ]
 }
