@@ -44,7 +44,10 @@ in
     # `python3` currently resolves to Python 3.14 in nixpkgs, but
     # homebridge-kasa-python supports only Python 3.11 through 3.13. Keep the
     # plugin's helper and the Kasa dependency on the supported 3.13 runtime.
+    # The plugin discovers interpreters by spawning `which`, which is not in
+    # the minimal systemd service environment unless it is added explicitly.
     systemd.services.homebridge.path = lib.mkAfter [
+      pkgs.which
       (pkgs.python313.withPackages (pythonPackages: [ pythonPackages.python-kasa ]))
     ];
 
