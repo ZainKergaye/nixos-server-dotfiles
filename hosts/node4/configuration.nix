@@ -11,6 +11,9 @@
     enableSSHSupport = true;
   };
 
+  networking.firewall.allowedTCPPorts = [ 3000 ];
+  networking.firewall.allowedUDPPorts = [ 3000 ];
+
   hardware.cpu.intel.updateMicrocode = true;
   boot.loader = {
     timeout = 4;
