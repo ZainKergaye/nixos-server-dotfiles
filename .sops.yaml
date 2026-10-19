@@ -1,3 +1,20 @@
+keys:
+  - &main age1prvxv885lmshh9zykeswjzlzvvqk0crxz3m8wuutn4jntnu48cvs4j3hlq
+  - &node1 age1m3p20a96mtp0zyp0hq5txlylj69ze3jg0kqdax4g2sgg0d5z2v9qdcqagh
+  - &node2 age18uqd4mrwht96f3n6a83t9xk3d89f5qnr463ysutv7j4gqk98nu8s7f3rke
+  - &node3 age1v3clkkx6leampf9xtlct0hn50gtuql2xgu9f4926rvn74dx3ygaqzy96mw
+  - &node4 age1hw6su42smujtdjvztje7kcy9jqc49s2lntyju5rgxqqpaltxnprqfwv0m0
+
 creation_rules:
+  # Each UPS monitor authenticates to main's upsd with this shared password.
+  # SOPS encrypts it independently for every participating host.
+  - path_regex: secrets/ups\.yaml$
+    key_groups:
+      - age:
+          - *main
+          - *node1
+          - *node2
+          - *node3
+          - *node4
   - path_regex: secrets/.*\.yaml$
-    age: age1prvxv885lmshh9zykeswjzlzvvqk0crxz3m8wuutn4jntnu48cvs4j3hlq
+    age: *main

@@ -152,18 +152,12 @@ runs a NUT secondary monitor, so a low-battery or forced-shutdown event causes
 each protected host to shut down cleanly. NUT port `3493` is LAN-only; its
 Prometheus exporter is local to `main`.
 
-Before deploying, create one strong shared password on `main`:
-
-```sh
-sudo install -d -m 0700 /etc/nut
-openssl rand -base64 32 | sudo tee /etc/nut/ups-monitor-password >/dev/null
-sudo chmod 0600 /etc/nut/ups-monitor-password
-```
-
-Copy that exact file to `node1` through `node4` using your normal secure admin
-path; it is deliberately not stored in this repository. Deploy `main` first,
-then the clients. On `main`, run `upsc UPS-1@localhost`; it should report
-`ups.status: OL` while utility power is present.
+The shared NUT monitor password is stored in `secrets/ups.yaml`, encrypted by
+SOPS to every host's SSH-derived age recipient. SOPS materializes it only at
+runtime; do not create or copy a plaintext `/etc/nut/ups-monitor-password`
+file. Deploy `main` first, then the clients. On `main`, run
+`upsc UPS-1@localhost`; it should report `ups.status: OL` while utility power
+is present.
 
 ## Router monitoring and logs
 

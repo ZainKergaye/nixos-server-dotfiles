@@ -12,7 +12,6 @@
     enable = true;
   };
   networking.nameservers = [ "localhost" ];
-  sops.age.sshKeyPaths = [ "/etc/ssh/ssh_host_ed25519_key" ];
   sops.defaultSopsFile = ../../secrets/main.yaml;
   sops.secrets.cloudflare-ddns-token = {
     owner = "cloudflare-ddns";
@@ -58,10 +57,7 @@
     ];
   };
 
-  ups = {
-    enable = true;
-    server.enable = true;
-  };
+  ups.server.enable = true;
 
   reverse_proxy = {
     enable = true;

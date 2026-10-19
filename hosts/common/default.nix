@@ -15,7 +15,19 @@
   cominDeployment.enable = true;
 
   prometheus.enable = true;
-  #ups.enable = true;
+  # All NUT participants decrypt the same monitor password locally. The
+  # plaintext is only materialized at this runtime path by sops-nix.
+  sops = {
+    age.sshKeyPaths = [ "/etc/ssh/ssh_host_ed25519_key" ];
+    secrets.ups-monitor-password = {
+      sopsFile = ../../secrets/ups.yaml;
+      mode = "0400";
+    };
+  };
+  ups = {
+    enable = true;
+    passwordFile = config.sops.secrets.ups-monitor-password.path;
+  };
 
   # virtualisation.graphics = false;
 
