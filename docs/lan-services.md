@@ -221,11 +221,16 @@ only listens on `127.0.0.1:9586`.
 `node3` runs the private coding-agent stack. Ollama uses its Vulkan backend and
 only the Tesla P4 (`GGML_VK_VISIBLE_DEVICES=1`), avoiding the broken CUDA 12.9
 package path in the current Nixpkgs revision; it declaratively downloads
-`qwen2.5-coder:7b`. Its API and the LiteLLM OpenAI-compatible gateway both
+`qwen3:8b`, a newer tool-capable model that fits alongside the configured
+24k-token context cache in the Tesla P4's 8 GiB of VRAM. Its API and the
+LiteLLM OpenAI-compatible gateway both
 listen only on loopback. OpenHands Agent Canvas is the LAN/WireGuard-facing
 entry point at `http://ai.s/canvas`, routed through Caddy on `main`. Canvas,
 its Agent Server, and automation service run in one container; the Agent
-Server is seeded with the local LiteLLM profile declaratively.
+Server is seeded with the local LiteLLM profile declaratively. The profile
+persists its fixed internal gateway credential, so Canvas does not request an
+LLM key after a session timeout or container restart. This is not a
+hosted-provider credential.
 
 Add hosted models through `codingAgent.additionalModels` and put their provider
 keys in a root-readable environment file referenced by

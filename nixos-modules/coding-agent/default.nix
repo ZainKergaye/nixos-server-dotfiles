@@ -11,7 +11,11 @@ let
   openHandsNetworkCidr = "172.30.0.0/24";
   openHandsProfile = pkgs.writeText "openhands-local-coder-profile.json" (
     builtins.toJSON {
-      include_secrets = false;
+      # Canvas otherwise deliberately omits `api_key` when it saves the
+      # profile.  After its session expires or the container restarts it then
+      # asks the user for a key again.  This is only the fixed, internal
+      # LiteLLM gateway credential; it is not a hosted-provider secret.
+      include_secrets = true;
       llm = {
         model = "openai/${cfg.localModel}";
         api_key = "local-gateway";
@@ -19,7 +23,9 @@ let
         base_url = "http://172.30.0.1:4000/v1";
         max_input_tokens = cfg.contextLength;
         max_output_tokens = 4096;
-        native_tool_calling = false;
+        # Qwen3 supports Ollama's native tool-call interface, which is more
+        # reliable for an agent than parsing tool calls from plain text.
+        native_tool_calling = true;
       };
     }
   );
@@ -30,9 +36,11 @@ in
 
     localModel = mkOption {
       type = types.str;
-      # The 7B Q4 model is 4.7 GiB, leaving sufficient P4 VRAM for a useful
-      # KV cache at the configured context size.
-      default = "qwen2.5-coder:7b";
+      # Qwen3 8B is a newer tool-capable model and its 5.2 GiB Q4
+      # quantization leaves sufficient Tesla P4 VRAM for the configured
+      # 24k-token KV cache.  Larger current coding models are 19 GiB or more
+      # and would run mostly from system RAM on this host.
+      default = "qwen3:8b";
       description = "Ollama coding model pulled for private, local requests";
     };
 
@@ -101,9 +109,9 @@ in
   };
 
   config = lib.mkIf cfg.enable {
-    # The Tesla P4 has 8 GiB of VRAM. Qwen2.5-Coder 7B is the strongest
-    # code-specialized model that leaves enough room for a 24k-token KV cache;
-    # larger models or a full 32k cache would spill into system RAM.
+    # The Tesla P4 has 8 GiB of VRAM. Qwen3 8B leaves enough room for a
+    # 24k-token KV cache; larger current coding models would spill heavily
+    # into system RAM.
     services.ollama = {
       enable = true;
       # CUDA 12.9 currently fails to build in this Nixpkgs revision because
