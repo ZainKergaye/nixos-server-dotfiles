@@ -144,6 +144,17 @@ in
               api_base = "http://127.0.0.1:11434";
             };
           }
+          # Canvas retains the selected model in existing conversations and
+          # browser state.  Keep the previous public name as an alias while
+          # routing it to the configured backend, so a stale profile cannot
+          # fail with LiteLLM's "Invalid model name" error after an upgrade.
+          {
+            model_name = "qwen2.5-coder:7b";
+            litellm_params = {
+              model = "ollama/${cfg.localModel}";
+              api_base = "http://127.0.0.1:11434";
+            };
+          }
         ] ++ cfg.additionalModels;
       };
     };

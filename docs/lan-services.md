@@ -232,6 +232,10 @@ persists its fixed internal gateway credential, so Canvas does not request an
 LLM key after a session timeout or container restart. This is not a
 hosted-provider credential.
 
+The previous `qwen2.5-coder:7b` gateway model name remains a compatibility
+alias for Qwen3. This lets saved Canvas conversations and browser state from
+before the upgrade continue without an invalid-model error.
+
 Add hosted models through `codingAgent.additionalModels` and put their provider
 keys in a root-readable environment file referenced by
 `codingAgent.litellmEnvironmentFile`. For example, a LiteLLM model can use
