@@ -1,104 +1,79 @@
 {
   "uid": "comin-overview",
   "title": "Comin Deployments",
-  "description": "Deployment state and repository fetch results reported by Comin.",
-  "tags": ["comin", "deployments", "prometheus"],
+  "description": "Fleet deployment health for all five nodes, using Comin exporter metrics.",
+  "tags": ["comin", "deployments", "fleet", "prometheus"],
   "timezone": "browser",
   "schemaVersion": 39,
-  "version": 2,
+  "version": 3,
   "refresh": "30s",
-  "templating": {
-    "list": [
-      {
-        "name": "host",
-        "label": "Host",
-        "type": "query",
-        "datasource": { "type": "prometheus", "uid": "Prometheus" },
-        "query": "label_values(up{job=\"comin\"}, host)",
-        "includeAll": true,
-        "allValue": ".*",
-        "multi": true,
-        "current": { "text": "All", "value": "$__all" }
-      },
-      {
-        "name": "remote",
-        "label": "Remote",
-        "type": "query",
-        "datasource": { "type": "prometheus", "uid": "Prometheus" },
-        "query": "label_values(comin_fetch_count{host=~\"$host\"}, remote_name)",
-        "includeAll": true,
-        "allValue": ".*",
-        "multi": true,
-        "current": { "text": "All", "value": "$__all" }
-      }
-    ]
-  },
+  "time": { "from": "now-24h", "to": "now" },
   "panels": [
     {
-      "id": 1,
-      "title": "Comin exporter availability",
-      "description": "One value per selected host. A down exporter prevents visibility into its deployment state.",
-      "type": "stat",
-      "targets": [{ "expr": "up{job=\"comin\",host=~\"$host\"}", "legendFormat": "{{host}}", "refId": "A", "instant": true }],
-      "fieldConfig": {
-        "defaults": {
-          "mappings": [{ "options": { "0": { "text": "down", "color": "red" }, "1": { "text": "up", "color": "green" } }, "type": "value" }],
-          "noValue": "not scraped"
-        },
-        "overrides": []
-      },
-      "options": { "colorMode": "value", "graphMode": "none", "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false } },
-      "gridPos": { "h": 7, "w": 8, "x": 0, "y": 0 }
+      "id": 1, "title": "Exporter reachability", "description": "All five exporters must be up for the fleet state to be current.", "type": "stat",
+      "targets": [{ "expr": "up{job=\"comin\"}", "legendFormat": "{{host}}", "refId": "A", "instant": true }],
+      "fieldConfig": { "defaults": { "mappings": [{ "type": "value", "options": { "0": { "text": "down", "color": "red" }, "1": { "text": "up", "color": "green" } } }], "noValue": "not scraped" }, "overrides": [] },
+      "options": { "colorMode": "value", "graphMode": "none", "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false } }, "gridPos": { "h": 7, "w": 8, "x": 0, "y": 0 }
     },
     {
-      "id": 2,
-      "title": "Hosts reporting deployment state",
-      "description": "Comin resets comin_deployment_info before setting the current deployment. A host is counted once it reports its current deployment status.",
-      "type": "stat",
-      "targets": [{ "expr": "count(comin_deployment_info{host=~\"$host\"})", "refId": "A", "instant": true }],
-      "fieldConfig": { "defaults": { "decimals": 0, "noValue": "0" }, "overrides": [] },
-      "options": { "colorMode": "value", "graphMode": "none", "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false } },
-      "gridPos": { "h": 7, "w": 8, "x": 8, "y": 0 }
+      "id": 2, "title": "Last deployment", "description": "Red means the most recently completed deployment failed.", "type": "stat",
+      "targets": [{ "expr": "comin_last_deployment_failed", "legendFormat": "{{host}}", "refId": "A", "instant": true }],
+      "fieldConfig": { "defaults": { "mappings": [{ "type": "value", "options": { "0": { "text": "successful", "color": "green" }, "1": { "text": "failed", "color": "red" } } }], "noValue": "no deployment yet" }, "overrides": [] },
+      "options": { "colorMode": "background", "graphMode": "none", "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false } }, "gridPos": { "h": 7, "w": 8, "x": 8, "y": 0 }
     },
     {
-      "id": 3,
-      "title": "Fetches in selected range",
-      "description": "Total Comin repository fetch attempts over the dashboard time range. The panels below break these down by status.",
-      "type": "stat",
-      "targets": [{ "expr": "sum(increase(comin_fetch_count{host=~\"$host\",remote_name=~\"$remote\"}[$__range]))", "refId": "A" }],
-      "fieldConfig": { "defaults": { "decimals": 0, "noValue": "0" }, "overrides": [] },
-      "options": { "colorMode": "value", "graphMode": "none", "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false } },
-      "gridPos": { "h": 7, "w": 8, "x": 16, "y": 0 }
+      "id": 3, "title": "Reboot required", "description": "Comin reported that the host needs a reboot.", "type": "stat",
+      "targets": [{ "expr": "comin_need_to_reboot", "legendFormat": "{{host}}", "refId": "A", "instant": true }],
+      "fieldConfig": { "defaults": { "mappings": [{ "type": "value", "options": { "0": { "text": "no", "color": "green" }, "1": { "text": "REBOOT", "color": "orange" } } }], "noValue": "not reported" }, "overrides": [] },
+      "options": { "colorMode": "background", "graphMode": "none", "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false } }, "gridPos": { "h": 7, "w": 8, "x": 16, "y": 0 }
     },
     {
-      "id": 4,
-      "title": "Latest deployment per host",
-      "description": "The active comin_deployment_info series carries the commit ID and deployment status labels.",
-      "type": "table",
-      "targets": [{ "expr": "comin_deployment_info{host=~\"$host\"}", "format": "table", "refId": "A", "instant": true }],
-      "fieldConfig": { "defaults": { "custom": { "align": "auto", "cellOptions": { "type": "auto" }, "inspect": false }, "mappings": [] }, "overrides": [] },
-      "options": { "cellHeight": "sm", "showHeader": true },
-      "gridPos": { "h": 9, "w": 24, "x": 0, "y": 7 }
+      "id": 4, "title": "Last evaluation", "description": "Red means the latest Nix evaluation failed.", "type": "stat",
+      "targets": [{ "expr": "comin_last_eval_failed", "legendFormat": "{{host}}", "refId": "A", "instant": true }],
+      "fieldConfig": { "defaults": { "mappings": [{ "type": "value", "options": { "0": { "text": "passed", "color": "green" }, "1": { "text": "failed", "color": "red" } } }], "noValue": "not evaluated" }, "overrides": [] },
+      "options": { "colorMode": "background", "graphMode": "none", "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false } }, "gridPos": { "h": 7, "w": 8, "x": 0, "y": 7 }
     },
     {
-      "id": 5,
-      "title": "Fetches by result",
-      "description": "Per-second repository fetch rate, grouped by host, remote, and Comin result status.",
-      "type": "timeseries",
-      "targets": [{ "expr": "sum by (host, remote_name, status) (rate(comin_fetch_count{host=~\"$host\",remote_name=~\"$remote\"}[$__rate_interval]))", "legendFormat": "{{host}} / {{remote_name}} / {{status}}", "refId": "A" }],
+      "id": 5, "title": "Last build", "description": "Red means the latest Nix build failed.", "type": "stat",
+      "targets": [{ "expr": "comin_last_build_failed", "legendFormat": "{{host}}", "refId": "A", "instant": true }],
+      "fieldConfig": { "defaults": { "mappings": [{ "type": "value", "options": { "0": { "text": "passed", "color": "green" }, "1": { "text": "failed", "color": "red" } } }], "noValue": "not built" }, "overrides": [] },
+      "options": { "colorMode": "background", "graphMode": "none", "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false } }, "gridPos": { "h": 7, "w": 8, "x": 8, "y": 7 }
+    },
+    {
+      "id": 6, "title": "Deployment suspended", "description": "A suspended host will not deploy new revisions.", "type": "stat",
+      "targets": [{ "expr": "comin_is_suspended", "legendFormat": "{{host}}", "refId": "A", "instant": true }],
+      "fieldConfig": { "defaults": { "mappings": [{ "type": "value", "options": { "0": { "text": "active", "color": "green" }, "1": { "text": "SUSPENDED", "color": "orange" } } }], "noValue": "not reported" }, "overrides": [] },
+      "options": { "colorMode": "background", "graphMode": "none", "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false } }, "gridPos": { "h": 7, "w": 8, "x": 16, "y": 7 }
+    },
+    {
+      "id": 7, "title": "Current deployment by host", "description": "Current deployment commit and status labels reported by every Comin instance.", "type": "table",
+      "targets": [{ "expr": "comin_deployment_info", "format": "table", "refId": "A", "instant": true }],
+      "fieldConfig": { "defaults": { "custom": { "align": "auto", "cellOptions": { "type": "auto" } } }, "overrides": [] },
+      "options": { "cellHeight": "sm", "showHeader": true }, "gridPos": { "h": 9, "w": 12, "x": 0, "y": 14 }
+    },
+    {
+      "id": 8, "title": "Last fetch by host and remote", "description": "Red means the latest repository fetch failed.", "type": "stat",
+      "targets": [{ "expr": "comin_last_fetch_failed", "legendFormat": "{{host}} / {{remote_name}}", "refId": "A", "instant": true }],
+      "fieldConfig": { "defaults": { "mappings": [{ "type": "value", "options": { "0": { "text": "succeeded", "color": "green" }, "1": { "text": "failed", "color": "red" } } }], "noValue": "not fetched" }, "overrides": [] },
+      "options": { "colorMode": "background", "graphMode": "none", "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false } }, "gridPos": { "h": 9, "w": 12, "x": 12, "y": 14 }
+    },
+    {
+      "id": 9, "title": "Comin version by host", "description": "Build-info metric from each Comin exporter.", "type": "table",
+      "targets": [{ "expr": "comin_build_info", "format": "table", "refId": "A", "instant": true }],
+      "fieldConfig": { "defaults": { "custom": { "align": "auto", "cellOptions": { "type": "auto" } } }, "overrides": [] },
+      "options": { "cellHeight": "sm", "showHeader": true }, "gridPos": { "h": 8, "w": 12, "x": 0, "y": 23 }
+    },
+    {
+      "id": 10, "title": "Repository fetches", "description": "Per-second fetch rate for every node, remote, and result.", "type": "timeseries",
+      "targets": [{ "expr": "sum by (host, remote_name, status) (rate(comin_fetch_count[$__rate_interval]))", "legendFormat": "{{host}} / {{remote_name}} / {{status}}", "refId": "A" }],
       "fieldConfig": { "defaults": { "unit": "ops", "min": 0 }, "overrides": [] },
-      "options": { "legend": { "calcs": ["lastNotNull", "sum"], "displayMode": "table", "placement": "bottom", "showLegend": true }, "tooltip": { "mode": "multi", "sort": "desc" } },
-      "gridPos": { "h": 9, "w": 12, "x": 0, "y": 16 }
+      "options": { "legend": { "calcs": ["lastNotNull", "sum"], "displayMode": "table", "placement": "bottom", "showLegend": true }, "tooltip": { "mode": "multi", "sort": "desc" } }, "gridPos": { "h": 8, "w": 12, "x": 12, "y": 23 }
     },
     {
-      "id": 6,
-      "title": "Fetch results in selected range",
-      "description": "Total poll attempts over the dashboard time range, grouped by result status.",
-      "type": "bargauge",
-      "targets": [{ "expr": "sum by (host, remote_name, status) (increase(comin_fetch_count{host=~\"$host\",remote_name=~\"$remote\"}[$__range]))", "legendFormat": "{{host}} / {{remote_name}} / {{status}}", "refId": "A", "instant": true }],
+      "id": 11, "title": "Fetch results in selected range", "description": "Total poll attempts grouped by node and result over the dashboard time range.", "type": "bargauge",
+      "targets": [{ "expr": "sum by (host, remote_name, status) (increase(comin_fetch_count[$__range]))", "legendFormat": "{{host}} / {{remote_name}} / {{status}}", "refId": "A", "instant": true }],
       "fieldConfig": { "defaults": { "decimals": 0, "min": 0 }, "overrides": [] },
-      "options": { "displayMode": "gradient", "orientation": "horizontal", "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false }, "showUnfilled": true, "valueMode": "color" },
-      "gridPos": { "h": 9, "w": 12, "x": 12, "y": 16 }
+      "options": { "displayMode": "gradient", "orientation": "horizontal", "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false }, "showUnfilled": true, "valueMode": "color" }, "gridPos": { "h": 9, "w": 24, "x": 0, "y": 31 }
     }
   ]
 }
