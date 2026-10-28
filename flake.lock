@@ -1,5 +1,22 @@
 {
   "nodes": {
+    "codex-nvim": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1763603761,
+        "narHash": "sha256-hvBsqLzV3oCVWK4Ll/YDrDhZSTjpvUjTpDQz6SFbtVo=",
+        "owner": "johnseth97",
+        "repo": "codex.nvim",
+        "rev": "e1149cbc875ff71ee21f8832b9fe815a270442b3",
+        "type": "github"
+      },
+      "original": {
+        "owner": "johnseth97",
+        "repo": "codex.nvim",
+        "rev": "e1149cbc875ff71ee21f8832b9fe815a270442b3",
+        "type": "github"
+      }
+    },
     "comin": {
       "inputs": {
         "flake-compat": "flake-compat",
@@ -247,15 +264,16 @@
     },
     "nixvim-custom": {
       "inputs": {
+        "codex-nvim": "codex-nvim",
         "flake-parts": "flake-parts",
         "nixvim": "nixvim"
       },
       "locked": {
-        "lastModified": 1791996793,
-        "narHash": "sha256-Zxu12xjO6HCbjgR7gvjlfBfetYY0+euNAmiarGHFPnc=",
+        "lastModified": 1793220605,
+        "narHash": "sha256-BhIt5nLRhH8bICA/5Aj/YDR6c51Uu2sWQ1jARsUmJrQ=",
         "owner": "ZainKergaye",
         "repo": "nixvim_dotfiles",
-        "rev": "489975df6eae70b9376e2800059d719c33c85a8e",
+        "rev": "2b110e802deb9f6bc005a1ac3f361be9758774c0",
         "type": "github"
       },
       "original": {
