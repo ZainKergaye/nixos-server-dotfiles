@@ -20,7 +20,9 @@
     powerManagement.enable = false;
     powerManagement.finegrained = false;
     open = false;
-    nvidiaSettings = true;
+    # The legacy settings GUI requires GTK2, which nixpkgs marks as broken.
+    # This server only needs the driver and command-line GPU tools.
+    nvidiaSettings = false;
     prime.nvidiaBusId = "PCI:1:0:0";
     package = pkgs.linuxKernel.packages.linux_6_6.nvidia_x11_legacy470;
   };
