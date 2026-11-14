@@ -53,6 +53,9 @@ in
       services.prometheus = {
         enable = true;
         port = 9090;
+        # Delete the oldest blocks when either retention limit is reached.
+        retentionTime = "30d";
+        extraFlags = [ "--storage.tsdb.retention.size=10GB" ];
         # Grafana runs on this machine, so there is no reason to publish the
         # Prometheus UI/API to the LAN.
         listenAddress = "127.0.0.1";
