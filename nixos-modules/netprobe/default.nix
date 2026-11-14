@@ -106,6 +106,7 @@ in
             "--config.file=/etc/prometheus/prometheus.yml"
             "--storage.tsdb.path=/prometheus"
             "--storage.tsdb.retention.time=30d"
+            "--storage.tsdb.retention.size=10GB"
           ];
           volumes = [
             "${netprobeSource}/config/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro"
