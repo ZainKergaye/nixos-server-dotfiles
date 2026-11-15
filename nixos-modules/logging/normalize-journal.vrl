@@ -1,0 +1,27 @@
+priority = to_int(.PRIORITY) ?? 6
+if .PRIORITY == null { priority = 6 }
+level = if priority <= 2 { "critical" } else if priority == 3 { "error" } else if priority == 4 { "warn" } else if priority == 7 { "debug" } else { "info" }
+container = string(.CONTAINER_NAME) ?? ""
+unit = string(._SYSTEMD_USER_UNIT) ?? string(._SYSTEMD_UNIT) ?? ""
+identifier = string(.SYSLOG_IDENTIFIER) ?? "unknown"
+log_source = if container != "" { "container" } else { "journal" }
+service = if container != "" {
+  container
+} else if ends_with(unit, ".service") {
+  unit
+} else {
+  identifier
+}
+
+# Keep useful context, without indexing process IDs or ephemeral container IDs.
+. = {
+  "timestamp": .timestamp,
+  "message": .message,
+  "source": log_source,
+  "service_name": service,
+  "level": level,
+  "unit": unit,
+  "container": container,
+  "identifier": identifier,
+  "pid": ._PID
+}

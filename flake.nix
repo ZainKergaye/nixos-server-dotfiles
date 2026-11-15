@@ -123,6 +123,17 @@
           node1-installer = node1Installer.config.system.build.isoImage;
         };
 
+      checks.${system}.logging = pkgs.runCommand "logging-pipeline-tests" {
+        nativeBuildInputs = [ pkgs.vector ];
+      } ''
+        vector test ${pkgs.writeText "logging-tests.json" (builtins.toJSON (
+          self.nixosConfigurations.main.config.services.vector.settings // {
+            tests = builtins.fromJSON (builtins.readFile ./nixos-modules/logging/tests.json);
+          }
+        ))}
+        touch "$out"
+      '';
+
       apps.${system} = lib.genAttrs hostNames (hostName: {
         meta.description = "Virtual machine for ${hostName}";
         type = "app";

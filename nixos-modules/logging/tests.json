@@ -1,0 +1,157 @@
+[
+  {
+    "name": "systemd errors",
+    "inputs": [
+      {
+        "insert_at": "normalize_journal",
+        "type": "log",
+        "log_fields": {
+          "message": "Deployment failed",
+          "PRIORITY": "3",
+          "_SYSTEMD_UNIT": "comin.service",
+          "_PID": "1234"
+        }
+      }
+    ],
+    "outputs": [
+      {
+        "extract_from": "normalize_journal",
+        "conditions": [
+          {
+            "type": "vrl",
+            "source": ".service_name == \"comin.service\" && .level == \"error\" && .source == \"journal\" && .message == \"Deployment failed\" && .pid == \"1234\""
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "name": "container stderr",
+    "inputs": [
+      {
+        "insert_at": "normalize_journal",
+        "type": "log",
+        "log_fields": {
+          "message": "Connection refused",
+          "PRIORITY": "3",
+          "_SYSTEMD_UNIT": "docker.service",
+          "CONTAINER_NAME": "scrypted",
+          "CONTAINER_ID_FULL": "ephemeral-id"
+        }
+      }
+    ],
+    "outputs": [
+      {
+        "extract_from": "normalize_journal",
+        "conditions": [
+          {
+            "type": "vrl",
+            "source": ".service_name == \"scrypted\" && .container == \"scrypted\" && .source == \"container\" && .level == \"error\" && !exists(.CONTAINER_ID_FULL)"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "name": "kernel warning",
+    "inputs": [
+      {
+        "insert_at": "normalize_journal",
+        "type": "log",
+        "log_fields": {
+          "message": "Device reset",
+          "PRIORITY": "4",
+          "SYSLOG_IDENTIFIER": "kernel",
+          "_TRANSPORT": "kernel"
+        }
+      }
+    ],
+    "outputs": [
+      {
+        "extract_from": "normalize_journal",
+        "conditions": [
+          {
+            "type": "vrl",
+            "source": ".service_name == \"kernel\" && .level == \"warn\" && .source == \"journal\""
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "name": "scope identity",
+    "inputs": [
+      {
+        "insert_at": "normalize_journal",
+        "type": "log",
+        "log_fields": {
+          "message": "User session",
+          "PRIORITY": "6",
+          "_SYSTEMD_UNIT": "session-123.scope",
+          "SYSLOG_IDENTIFIER": "sshd"
+        }
+      }
+    ],
+    "outputs": [
+      {
+        "extract_from": "normalize_journal",
+        "conditions": [
+          {
+            "type": "vrl",
+            "source": ".service_name == \"sshd\" && .unit == \"session-123.scope\" && .level == \"info\""
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "name": "user service",
+    "inputs": [
+      {
+        "insert_at": "normalize_journal",
+        "type": "log",
+        "log_fields": {
+          "message": "User service started",
+          "_SYSTEMD_UNIT": "user@1000.service",
+          "_SYSTEMD_USER_UNIT": "my-task.service"
+        }
+      }
+    ],
+    "outputs": [
+      {
+        "extract_from": "normalize_journal",
+        "conditions": [
+          {
+            "type": "vrl",
+            "source": ".service_name == \"my-task.service\" && .level == \"info\""
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "name": "critical priority",
+    "inputs": [
+      {
+        "insert_at": "normalize_journal",
+        "type": "log",
+        "log_fields": {
+          "message": "Out of memory",
+          "PRIORITY": 2,
+          "SYSLOG_IDENTIFIER": "kernel"
+        }
+      }
+    ],
+    "outputs": [
+      {
+        "extract_from": "normalize_journal",
+        "conditions": [
+          {
+            "type": "vrl",
+            "source": ".level == \"critical\""
+          }
+        ]
+      }
+    ]
+  }
+]
