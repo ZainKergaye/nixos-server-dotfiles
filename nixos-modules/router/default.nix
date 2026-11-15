@@ -64,14 +64,6 @@ in
   };
 
   config = lib.mkIf config.router.enable {
-    # Keep router, DHCP, DNS, and firewall events across reboots.  A finite
-    # retention limit prevents a noisy WAN scan from consuming the disk.
-    services.journald.settings.Journal = {
-      Storage = "persistent";
-      SystemMaxUse = "1G";
-      MaxRetentionSec = "30day";
-    };
-
     boot.kernel.sysctl = {
       # IP forwarding
       "net.ipv4.ip_forward" = 1;
@@ -296,53 +288,7 @@ in
 
     systemd.services.alertmanager-ntfy.after = [ "ntfy-sh.service" ];
 
-    # Store structured EVE events locally without exposing a log database on
-    # the network.  Vector tails the JSON event stream and Loki retains it for
-    # dashboard exploration and alert triage.
-    services.loki = lib.mkIf config.router.ids.enable {
-      enable = true;
-      configuration = {
-        auth_enabled = false;
-        server = {
-          http_listen_address = "127.0.0.1";
-          http_listen_port = 3100;
-        };
-        common = {
-          path_prefix = "/var/lib/loki";
-          replication_factor = 1;
-          ring.kvstore.store = "inmemory";
-          storage.filesystem.chunks_directory = "/var/lib/loki/chunks";
-        };
-        schema_config.configs = [
-          {
-            from = "2024-01-01";
-            store = "tsdb";
-            object_store = "filesystem";
-            schema = "v13";
-            index = {
-              prefix = "index_";
-              period = "24h";
-            };
-          }
-        ];
-        storage_config.tsdb_shipper = {
-          active_index_directory = "/var/lib/loki/tsdb-index";
-          cache_location = "/var/lib/loki/tsdb-cache";
-        };
-        compactor.working_directory = "/var/lib/loki/compactor";
-        # Loki 3.x initializes the local ruler even when no rules are
-        # configured.  Give it explicit local storage so startup succeeds.
-        ruler = {
-          rule_path = "/var/lib/loki/rules-tmp";
-          storage = {
-            type = "local";
-            local.directory = "/var/lib/loki/rules";
-          };
-        };
-        limits_config.retention_period = "30d";
-      };
-    };
-
+    # Suricata keeps its existing stream alongside the shared journal pipeline.
     services.vector = lib.mkIf config.router.ids.enable {
       enable = true;
       settings = {
@@ -386,8 +332,6 @@ in
 
     systemd.tmpfiles.rules = lib.mkIf config.router.ids.enable [
       "d /var/lib/node_exporter/textfile 0755 root root -"
-      "d /var/lib/loki/rules 0750 loki loki -"
-      "d /var/lib/loki/rules-tmp 0750 loki loki -"
     ];
 
     # dnsmasq's lease file is the authoritative view of active DHCP clients.

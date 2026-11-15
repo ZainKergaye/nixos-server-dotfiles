@@ -7,6 +7,7 @@
     ./homebridge
     ./immich
     ./lan-node
+    ./logging
     ./netprobe
     ./prometheus
     ./reverse_proxy

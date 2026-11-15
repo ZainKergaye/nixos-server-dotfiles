@@ -15,6 +15,7 @@
   cominDeployment.enable = true;
 
   prometheus.enable = true;
+  centralLogging.enable = true;
   # All NUT participants decrypt the same monitor password locally. The
   # plaintext is only materialized at this runtime path by sops-nix.
   sops = {

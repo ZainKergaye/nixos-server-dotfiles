@@ -118,6 +118,8 @@ jobs:
           NIX_GITHUB_TOKEN: ${{ steps.build-token.outputs.token }}
         run: |
           set -euo pipefail
+          nix --access-tokens "github.com=$NIX_GITHUB_TOKEN" build \
+            .#checks.x86_64-linux.logging --no-link --no-update-lock-file --show-trace
           for host in main node1 node2 node3 node4; do
             nix --access-tokens "github.com=$NIX_GITHUB_TOKEN" build \
               ".#nixosConfigurations.$host.config.system.build.toplevel" \

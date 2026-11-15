@@ -55,6 +55,9 @@ in
   config = lib.mkIf cfg.enable {
     services.grafana = {
       enable = true;
+      # These datasources are separate plugins in current Grafana releases.
+      # Install them through Nix so dashboards work without runtime downloads.
+      declarativePlugins = with pkgs.grafanaPlugins; [ loki prometheus ];
       settings = {
         server = {
           http_addr = "0.0.0.0";

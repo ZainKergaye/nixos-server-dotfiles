@@ -50,6 +50,10 @@ done
 
 ## Structure
 
+System and container logs from every node are available in Grafana's
+**Infrastructure → Homelab Logs** dashboard. See [Central logs](docs/central-logs.md)
+for filters, queries, retention, and deployment verification.
+
 The entrypoint is the flake. The flake pulls in the hostName at `hosts/xxx/configuration.nix`. Each host shares `hosts/common` but then individually takes any module it needs from `nixos-modules`. The `homemanager-modules` are hopefully the same across every machine.
 
 ## Features
